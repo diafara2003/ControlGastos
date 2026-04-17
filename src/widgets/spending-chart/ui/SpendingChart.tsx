@@ -30,51 +30,57 @@ export function SpendingChart({
 
   return (
     <div className="space-y-4">
-      {/* Balance — dark green header area (Bancolombia style) */}
-      <div className="rounded-2xl bg-[#0D2B1E] px-5 pt-5 pb-4">
-        <p className="text-xs font-medium text-white/50 tracking-wide">
+      {/* Balance card — emerald theme */}
+      <div className="rounded-2xl bg-emerald-600 px-5 pt-5 pb-4">
+        <p className="text-xs font-medium text-emerald-100/70 tracking-wide">
           Saldo disponible
         </p>
         <p
           className={`text-[32px] font-bold mt-0.5 tracking-tight tabular-nums ${
-            isPositive ? "text-white" : "text-red-400"
+            isPositive ? "text-white" : "text-red-300"
           }`}
           style={{ letterSpacing: "-0.02em" }}
         >
           {formatCOP(balance)}
         </p>
 
-        {/* Daily budget */}
         {isCurrentMonth && daysLeft > 0 && totalIncome > 0 && (
-          <p className="text-xs text-[#FDDA24] mt-1.5">
-            Puedes gastar {dailyBudget > 0 ? formatCOP(Math.round(dailyBudget)) : "$0"} por día
+          <p className="text-xs text-emerald-100 mt-1.5">
+            Puedes gastar{" "}
+            <span className="font-semibold text-white">
+              {dailyBudget > 0 ? formatCOP(Math.round(dailyBudget)) : "$0"}
+            </span>{" "}
+            por día
           </p>
         )}
 
-        {/* Progress */}
         {totalIncome > 0 && (
           <div className="mt-4">
-            <div className="h-1 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-1 rounded-full bg-emerald-500/40 overflow-hidden">
               <div
-                className="h-full rounded-full bg-[#FDDA24] transition-all duration-700"
+                className="h-full rounded-full bg-white transition-all duration-700"
                 style={{ width: `${Math.min(spendingProgress * 100, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between mt-1.5 text-[10px] text-white/40">
+            <div className="flex justify-between mt-1.5 text-[10px] text-emerald-200/60">
               <span>{Math.round(spendingProgress * 100)}% gastado</span>
-              <span>{isCurrentMonth ? `Día ${dayElapsed} de ${daysInMonth}` : "Mes completo"}</span>
+              <span>
+                {isCurrentMonth
+                  ? `Día ${dayElapsed} de ${daysInMonth}`
+                  : "Mes completo"}
+              </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Income / Expenses — white cards */}
+      {/* Income / Expenses */}
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl bg-white border border-gray-100 px-4 py-3 shadow-sm">
           <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
             Ingresos
           </p>
-          <p className="text-lg font-bold text-[#0D2B1E] mt-0.5 tabular-nums">
+          <p className="text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">
             {formatCOP(totalIncome)}
           </p>
         </div>
