@@ -1,22 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { SpendingChart } from "@/src/widgets/spending-chart";
 import { CategoryBreakdown } from "@/src/widgets/category-breakdown";
 import { RecentTransactions } from "@/src/widgets/recent-transactions";
 import { MonthlyTrend } from "@/src/widgets/monthly-trend";
-import { MonthlyComparison } from "@/src/widgets/monthly-comparison";
-import { FixedVsVariable } from "@/src/widgets/fixed-vs-variable";
-import { SubscriptionsList } from "@/src/widgets/subscriptions";
-import { BudgetProgress } from "@/src/widgets/budget-progress";
 import { getTransactions, getMonthlyTotals } from "@/src/entities/transaction";
 import { getCategoryBreakdown } from "@/src/entities/category";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
-import { createClient } from "@/src/shared/api/supabase/client";
-import { Button } from "@/src/shared/ui/button";
 import { Spinner } from "@/src/shared/ui/spinner";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
 
 interface MonthlyData {
   month: string;
@@ -32,19 +27,6 @@ export function DashboardPage() {
   >([]);
   const [totals, setTotals] = useState({ income: 0, expenses: 0 });
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [comparison, setComparison] = useState<
-    {
-      category_name: string;
-      category_icon: string;
-      current_month_total: number;
-      previous_month_total: number;
-      change_percent: number | null;
-    }[]
-  >([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [subscriptions, setSubscriptions] = useState<any[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [budgets, setBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const isCurrentMonth =
@@ -71,31 +53,17 @@ export function DashboardPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const supabase = createClient();
       const start = startOfMonth(selectedDate).toISOString();
       const end = endOfMonth(selectedDate).toISOString();
 
-      const [txns, breakdown, monthly, comp, subs, budgetProgress] =
-        await Promise.all([
-          getTransactions({ startDate: start, endDate: end }),
-          getCategoryBreakdown(start, end).catch(() => []),
-          getMonthlyTotals(selectedDate, 6).catch(() => []),
-          Promise.resolve(supabase.rpc("get_monthly_comparison"))
-            .then((r) => r.data ?? [])
-            .catch(() => []),
-          Promise.resolve(supabase.rpc("detect_subscriptions"))
-            .then((r) => r.data ?? [])
-            .catch(() => []),
-          Promise.resolve(supabase.rpc("get_budget_progress"))
-            .then((r) => r.data ?? [])
-            .catch(() => []),
-        ]);
+      const [txns, breakdown, monthly] = await Promise.all([
+        getTransactions({ startDate: start, endDate: end }),
+        getCategoryBreakdown(start, end).catch(() => []),
+        getMonthlyTotals(selectedDate, 6).catch(() => []),
+      ]);
 
       setTransactions(txns);
       setMonthlyData(monthly ?? []);
-      setComparison(comp);
-      setSubscriptions(subs);
-      setBudgets(budgetProgress);
 
       const income = txns
         .filter((t) => t.type === "income")
@@ -147,29 +115,27 @@ export function DashboardPage() {
   const showYear = year !== new Date().getFullYear();
 
   return (
-    <div className="space-y-5 pb-2">
-      {/* Month navigation */}
-      <div className="flex items-center justify-between px-1">
-        <Button
-          variant="ghost"
-          size="icon"
+    <div className="space-y-5 pb-4">
+      {/* Month navigation - minimal centered */}
+      <div className="flex items-center justify-center gap-6 pt-1">
+        <button
           onClick={goToPreviousMonth}
-          className="h-10 w-10 rounded-xl"
+          className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100"
         >
           <ChevronLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-lg font-bold text-gray-900 capitalize tracking-tight">
+        </button>
+        <h1 className="text-base font-semibold text-gray-900 capitalize tracking-tight min-w-[140px] text-center">
           {monthName}{showYear ? ` ${year}` : ""}
         </h1>
-        <Button
-          variant="ghost"
-          size="icon"
+        <button
           onClick={goToNextMonth}
           disabled={isCurrentMonth}
-          className={`h-10 w-10 rounded-xl ${isCurrentMonth ? "opacity-30" : ""}`}
+          className={`flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100 ${
+            isCurrentMonth ? "opacity-0 pointer-events-none" : ""
+          }`}
         >
           <ChevronRight className="h-5 w-5" />
-        </Button>
+        </button>
       </div>
 
       {loading ? (
@@ -178,26 +144,40 @@ export function DashboardPage() {
           <p className="text-sm text-gray-400">Cargando datos...</p>
         </div>
       ) : (
-        <div className="space-y-4 stagger-children">
+        <div className="space-y-5 stagger-children">
+          {/* Hero balance */}
           <SpendingChart
             totalExpenses={totals.expenses}
             totalIncome={totals.income}
             selectedDate={selectedDate}
           />
 
-          <BudgetProgress budgets={budgets} />
+          {/* Quick actions */}
+          <div className="flex gap-3 px-1">
+            <Link
+              href="/transactions?action=add&type=expense"
+              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-all active:scale-[0.97] active:bg-gray-800"
+            >
+              <Plus className="h-4 w-4" />
+              Agregar gasto
+            </Link>
+            <Link
+              href="/transactions?action=add&type=income"
+              className="flex-1 flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-all active:scale-[0.97] active:bg-gray-50"
+            >
+              <TrendingUp className="h-4 w-4" />
+              Agregar ingreso
+            </Link>
+          </div>
 
+          {/* Recent transactions */}
+          <RecentTransactions transactions={transactions.slice(0, 4)} />
+
+          {/* Category breakdown */}
           <CategoryBreakdown data={categoryData} />
 
-          <FixedVsVariable categoryData={categoryData} />
-
-          {isCurrentMonth && <MonthlyComparison data={comparison} />}
-
+          {/* Monthly trend */}
           <MonthlyTrend data={monthlyData} />
-
-          {isCurrentMonth && <SubscriptionsList subscriptions={subscriptions} />}
-
-          <RecentTransactions transactions={transactions.slice(0, 5)} />
         </div>
       )}
     </div>
