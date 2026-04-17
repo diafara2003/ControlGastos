@@ -36,7 +36,7 @@ export function LoginForm() {
   };
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-sm">
+    <div className="flex flex-col gap-3.5 w-full">
       {/* Social login buttons */}
       <Button
         type="button"
@@ -44,7 +44,7 @@ export function LoginForm() {
         size="lg"
         onClick={() => handleSocialLogin("google")}
         disabled={!!socialLoading}
-        className="w-full"
+        className="w-full h-12 text-sm font-medium"
       >
         {socialLoading === "google" ? (
           <Spinner className="h-4 w-4" />
@@ -65,7 +65,7 @@ export function LoginForm() {
         size="lg"
         onClick={() => handleSocialLogin("azure")}
         disabled={!!socialLoading}
-        className="w-full"
+        className="w-full h-12 text-sm font-medium"
       >
         {socialLoading === "azure" ? (
           <Spinner className="h-4 w-4" />
@@ -80,22 +80,22 @@ export function LoginForm() {
         Continuar con Microsoft
       </Button>
 
-      <div className="relative">
+      <div className="relative my-1">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
+          <div className="w-full border-t border-gray-100" />
         </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-gradient-to-b from-emerald-50 to-white px-3 text-gray-400">
+        <div className="relative flex justify-center text-[11px]">
+          <span className="bg-white px-3 text-gray-300 uppercase tracking-wider font-medium">
             o con email
           </span>
         </div>
       </div>
 
       {/* Email/password form */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex flex-col gap-2">
-          <label htmlFor="email" className="text-sm font-medium text-gray-700">
-            Correo electrónico
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-xs font-medium text-gray-600 pl-1">
+            Correo electronico
           </label>
           <Input
             id="email"
@@ -107,9 +107,9 @@ export function LoginForm() {
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">
-            Contraseña
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-xs font-medium text-gray-600 pl-1">
+            Contrasena
           </label>
           <Input
             id="password"
@@ -123,27 +123,30 @@ export function LoginForm() {
         </div>
 
         {error && (
-          <p className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</p>
+          <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-xl p-3 border border-red-100">
+            <span className="text-red-400">!</span>
+            {error}
+          </div>
         )}
 
-        <Button type="submit" disabled={loading} size="lg">
+        <Button type="submit" disabled={loading} size="lg" className="w-full mt-1">
           {loading ? (
             <Spinner className="h-4 w-4" />
           ) : isSignUp ? (
             "Crear cuenta"
           ) : (
-            "Iniciar sesión"
+            "Iniciar sesion"
           )}
         </Button>
 
         <button
           type="button"
           onClick={() => setIsSignUp(!isSignUp)}
-          className="text-sm text-emerald-600 hover:underline"
+          className="text-sm text-emerald-600 hover:text-emerald-700 transition-colors py-1"
         >
           {isSignUp
-            ? "¿Ya tienes cuenta? Inicia sesión"
-            : "¿No tienes cuenta? Regístrate"}
+            ? "Ya tienes cuenta? Inicia sesion"
+            : "No tienes cuenta? Registrate"}
         </button>
       </form>
     </div>

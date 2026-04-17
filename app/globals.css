@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f9fafb;
+  --background: #f8faf9;
   --foreground: #111827;
   --card-bg: #ffffff;
-  --card-border: #e5e7eb;
+  --card-border: #e8ebe9;
   --muted: #6b7280;
 }
 
@@ -29,6 +29,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Dark mode overrides for common elements */
@@ -64,7 +65,9 @@ body {
   display: none;
 }
 
-/* Animations for dialog */
+/* ===== Animations ===== */
+
+/* Dialog animations */
 @keyframes fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -75,3 +78,107 @@ body {
 }
 .animate-in { animation: fade-in 0.2s ease-out; }
 .slide-in-from-bottom { animation: slide-in-from-bottom 0.3s ease-out; }
+
+/* Fade-up for cards */
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.4s ease-out both;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  animation: fade-up 0.35s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+
+/* Pulse glow for balance card */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); }
+  50% { box-shadow: 0 0 30px rgba(16, 185, 129, 0.3); }
+}
+.animate-pulse-glow {
+  animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.animate-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Spin animation for the loading spinner (enhanced) */
+@keyframes spin-smooth {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Scale-in for icons */
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out both;
+}
+
+/* Login page background shimmer */
+@keyframes bg-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.animate-bg-shift {
+  background-size: 200% 200%;
+  animation: bg-shift 8s ease infinite;
+}
+
+/* Bottom nav active indicator */
+@keyframes nav-indicator {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+.animate-nav-indicator {
+  animation: nav-indicator 0.25s ease-out both;
+}
+
+/* Number counter animation placeholder (CSS only visual hint) */
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-count-up {
+  animation: count-up 0.5s ease-out both;
+  animation-delay: 0.2s;
+}

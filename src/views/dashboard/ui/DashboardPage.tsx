@@ -140,13 +140,18 @@ export function DashboardPage() {
   const showYear = year !== new Date().getFullYear();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 pb-2">
       {/* Month navigation */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
+      <div className="flex items-center justify-between px-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToPreviousMonth}
+          className="h-10 w-10 rounded-xl"
+        >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold text-gray-900 capitalize">
+        <h1 className="text-lg font-bold text-gray-900 capitalize tracking-tight">
           {monthName}{showYear ? ` ${year}` : ""}
         </h1>
         <Button
@@ -154,18 +159,19 @@ export function DashboardPage() {
           size="icon"
           onClick={goToNextMonth}
           disabled={isCurrentMonth}
-          className={isCurrentMonth ? "opacity-30" : ""}
+          className={`h-10 w-10 rounded-xl ${isCurrentMonth ? "opacity-30" : ""}`}
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
+        <div className="flex flex-col items-center justify-center py-24 gap-3">
           <Spinner className="h-8 w-8" />
+          <p className="text-sm text-gray-400">Cargando datos...</p>
         </div>
       ) : (
-        <>
+        <div className="space-y-4 stagger-children">
           <SpendingChart
             totalExpenses={totals.expenses}
             totalIncome={totals.income}
@@ -184,7 +190,7 @@ export function DashboardPage() {
           {isCurrentMonth && <SubscriptionsList subscriptions={subscriptions} />}
 
           <RecentTransactions transactions={transactions.slice(0, 5)} />
-        </>
+        </div>
       )}
     </div>
   );

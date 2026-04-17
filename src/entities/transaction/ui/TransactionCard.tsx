@@ -16,19 +16,21 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-gray-50 active:bg-gray-100"
+      className="flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all duration-200 hover:bg-gray-50 active:bg-gray-100 active:scale-[0.99]"
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-lg">
+      <div className={`flex h-11 w-11 items-center justify-center rounded-xl text-lg transition-transform duration-200 ${
+        isIncome ? "bg-emerald-50" : "bg-gray-50"
+      }`}>
         {transaction.category?.icon ?? "💳"}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="truncate font-medium text-gray-900">
+        <p className="truncate font-medium text-gray-900 text-[15px]">
           {transaction.merchant}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-400 mt-0.5">
           {formatShortDate(transaction.transaction_date)}
           {transaction.card_last_four && (
-            <span className="text-gray-400"> · *{transaction.card_last_four}</span>
+            <span className="text-gray-300"> · *{transaction.card_last_four}</span>
           )}
           {transaction.category && (
             <>
@@ -42,8 +44,8 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
         </p>
       </div>
       <span
-        className={`text-sm font-semibold whitespace-nowrap ${
-          isIncome ? "text-emerald-600" : "text-gray-900"
+        className={`text-sm font-semibold whitespace-nowrap tabular-nums ${
+          isIncome ? "text-emerald-600" : "text-gray-800"
         }`}
       >
         {formatTransactionAmount(transaction.amount, transaction.type)}
