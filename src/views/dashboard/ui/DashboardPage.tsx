@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { SpendingChart } from "@/src/widgets/spending-chart";
 import { CategoryBreakdown } from "@/src/widgets/category-breakdown";
 import { RecentTransactions } from "@/src/widgets/recent-transactions";
@@ -14,7 +14,9 @@ import { getCategoryBreakdown } from "@/src/entities/category";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { Button } from "@/src/shared/ui/button";
 import { Spinner } from "@/src/shared/ui/spinner";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface MonthlyData {
   month: string;
@@ -23,6 +25,7 @@ interface MonthlyData {
 }
 
 export function DashboardPage() {
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categoryData, setCategoryData] = useState<
     { name: string; value: number; color: string; icon: string }[]
@@ -44,98 +47,145 @@ export function DashboardPage() {
   const [budgets, setBudgets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const supabase = createClient();
-        const now = new Date();
-        const start = startOfMonth(now).toISOString();
-        const end = endOfMonth(now).toISOString();
+  const isCurrentMonth =
+    selectedDate.getMonth() === new Date().getMonth() &&
+    selectedDate.getFullYear() === new Date().getFullYear();
 
-        const [txns, breakdown, monthly, comp, subs, budgetProgress] =
-          await Promise.all([
-            getTransactions({ startDate: start, endDate: end }),
-            getCategoryBreakdown(start, end).catch(() => []),
-            getMonthlyTotals(6).catch(() => []),
-            Promise.resolve(supabase.rpc("get_monthly_comparison")).then((r) => r.data ?? []).catch(() => []),
-            Promise.resolve(supabase.rpc("detect_subscriptions")).then((r) => r.data ?? []).catch(() => []),
-            Promise.resolve(supabase.rpc("get_budget_progress")).then((r) => r.data ?? []).catch(() => []),
-          ]);
+  const goToPreviousMonth = () => {
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  };
 
-        setTransactions(txns);
-        setMonthlyData(monthly ?? []);
-        setComparison(comp);
-        setSubscriptions(subs);
-        setBudgets(budgetProgress);
+  const goToNextMonth = () => {
+    if (isCurrentMonth) return;
+    setSelectedDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  };
 
-        const income = txns
-          .filter((t) => t.type === "income")
-          .reduce((sum, t) => sum + t.amount, 0);
-        const expenses = txns
-          .filter((t) => t.type === "expense")
-          .reduce((sum, t) => sum + t.amount, 0);
-        setTotals({ income, expenses });
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const supabase = createClient();
+      const start = startOfMonth(selectedDate).toISOString();
+      const end = endOfMonth(selectedDate).toISOString();
 
-        if (Array.isArray(breakdown)) {
-          setCategoryData(
-            breakdown.map(
-              (b: {
-                name: string;
-                total: number;
-                color: string;
-                icon: string;
-              }) => ({
-                name: b.name,
-                value: b.total,
-                color: b.color,
-                icon: b.icon,
-              })
-            )
-          );
-        }
-      } catch (err) {
-        console.error("Error loading dashboard:", err);
-      } finally {
-        setLoading(false);
+      const [txns, breakdown, monthly, comp, subs, budgetProgress] =
+        await Promise.all([
+          getTransactions({ startDate: start, endDate: end }),
+          getCategoryBreakdown(start, end).catch(() => []),
+          getMonthlyTotals(12).catch(() => []),
+          Promise.resolve(supabase.rpc("get_monthly_comparison"))
+            .then((r) => r.data ?? [])
+            .catch(() => []),
+          Promise.resolve(supabase.rpc("detect_subscriptions"))
+            .then((r) => r.data ?? [])
+            .catch(() => []),
+          Promise.resolve(supabase.rpc("get_budget_progress"))
+            .then((r) => r.data ?? [])
+            .catch(() => []),
+        ]);
+
+      setTransactions(txns);
+      setMonthlyData(monthly ?? []);
+      setComparison(comp);
+      setSubscriptions(subs);
+      setBudgets(budgetProgress);
+
+      const income = txns
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + t.amount, 0);
+      const expenses = txns
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0);
+      setTotals({ income, expenses });
+
+      if (Array.isArray(breakdown)) {
+        setCategoryData(
+          breakdown.map(
+            (b: {
+              name: string;
+              total: number;
+              color: string;
+              icon: string;
+            }) => ({
+              name: b.name,
+              value: b.total,
+              color: b.color,
+              icon: b.icon,
+            })
+          )
+        );
+      } else {
+        setCategoryData([]);
       }
+    } catch (err) {
+      console.error("Error loading dashboard:", err);
+    } finally {
+      setLoading(false);
     }
+  }, [selectedDate]);
+
+  useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
-
-  const monthName = getMonthName(new Date());
+  const monthName = getMonthName(selectedDate);
+  const year = selectedDate.getFullYear();
+  const showYear = year !== new Date().getFullYear();
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900 capitalize">
-        {monthName}
-      </h1>
+      {/* Month navigation */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" size="icon" onClick={goToPreviousMonth}>
+          <ChevronLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl font-bold text-gray-900 capitalize">
+          {monthName}{showYear ? ` ${year}` : ""}
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={goToNextMonth}
+          disabled={isCurrentMonth}
+          className={isCurrentMonth ? "opacity-30" : ""}
+        >
+          <ChevronRight className="h-5 w-5" />
+        </Button>
+      </div>
 
-      <SpendingChart
-        totalExpenses={totals.expenses}
-        totalIncome={totals.income}
-      />
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Spinner className="h-8 w-8" />
+        </div>
+      ) : (
+        <>
+          <SpendingChart
+            totalExpenses={totals.expenses}
+            totalIncome={totals.income}
+          />
 
-      <BudgetProgress budgets={budgets} />
+          <BudgetProgress budgets={budgets} />
 
-      <CategoryBreakdown data={categoryData} />
+          <CategoryBreakdown data={categoryData} />
 
-      <FixedVsVariable categoryData={categoryData} />
+          <FixedVsVariable categoryData={categoryData} />
 
-      <MonthlyComparison data={comparison} />
+          {isCurrentMonth && <MonthlyComparison data={comparison} />}
 
-      <MonthlyTrend data={monthlyData} />
+          <MonthlyTrend data={monthlyData} />
 
-      <SubscriptionsList subscriptions={subscriptions} />
+          {isCurrentMonth && <SubscriptionsList subscriptions={subscriptions} />}
 
-      <RecentTransactions transactions={transactions.slice(0, 5)} />
+          <RecentTransactions transactions={transactions.slice(0, 5)} />
+        </>
+      )}
     </div>
   );
 }
