@@ -102,7 +102,7 @@ export function BudgetForm({
                 .filter((c) => c.name !== "Ingresos")
                 .map((cat) => (
                   <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
+                    {cat.name}
                   </option>
                 ))}
             </Select>

@@ -50,8 +50,13 @@ export function AppHeader() {
       <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex items-center gap-2 rounded-full p-0.5 transition-all hover:ring-2 hover:ring-emerald-200 active:scale-95"
+          className="flex items-center gap-2 rounded-full py-0.5 pl-2 pr-0.5 transition-all hover:bg-gray-50 dark:hover:bg-slate-800 active:scale-95"
         >
+          {user?.name && (
+            <span className="text-xs font-medium text-gray-600 dark:text-slate-300 max-w-[100px] truncate">
+              {user.name.split(" ")[0]}
+            </span>
+          )}
           {user?.avatar ? (
             <img
               src={user.avatar}

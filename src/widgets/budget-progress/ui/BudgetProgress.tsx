@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/src/shared/ui/card";
 import { Progress } from "@/src/shared/ui/progress";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { Target, AlertTriangle, XCircle } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 
 interface BudgetItem {
   budget_id: string;
@@ -39,7 +40,7 @@ export function BudgetProgress({ budgets }: BudgetProgressProps) {
             <div key={b.budget_id} className="space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">{b.category_icon}</span>
+                  <LucideIcon name={b.category_icon} size={18} color={b.category_color} />
                   <span className="text-sm font-medium text-gray-800">
                     {b.category_name}
                   </span>

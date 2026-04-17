@@ -156,7 +156,7 @@ export function AddTransactionForm({
               <option value="">Seleccionar...</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </Select>

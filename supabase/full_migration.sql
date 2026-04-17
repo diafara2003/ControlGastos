@@ -8,7 +8,7 @@ create table public.categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users on delete cascade not null,
   name text not null,
-  icon text not null default '📦',
+  icon text not null default 'package',
   color text not null default '#9CA3AF',
   is_default boolean not null default false,
   created_at timestamptz not null default now()
@@ -43,19 +43,19 @@ returns trigger as $$
 begin
   insert into public.profiles (id) values (new.id);
   insert into public.categories (user_id, name, icon, color, is_default) values
-    (new.id, 'Suscripciones', '🔄', '#8B5CF6', true),
-    (new.id, 'Compras online', '🛒', '#F59E0B', true),
-    (new.id, 'Supermercado', '🏪', '#10B981', true),
-    (new.id, 'Restaurantes', '🍽️', '#EF4444', true),
-    (new.id, 'Transporte', '🚗', '#3B82F6', true),
-    (new.id, 'Servicios públicos', '💡', '#6366F1', true),
-    (new.id, 'Transferencias', '💸', '#EC4899', true),
-    (new.id, 'Salud', '🏥', '#14B8A6', true),
-    (new.id, 'Entretenimiento', '🎮', '#F97316', true),
-    (new.id, 'Educación', '📚', '#06B6D4', true),
-    (new.id, 'Efectivo', '💵', '#84CC16', true),
-    (new.id, 'Ingresos', '💰', '#22C55E', true),
-    (new.id, 'Otros', '📦', '#9CA3AF', true);
+    (new.id, 'Suscripciones', 'repeat', '#8B5CF6', true),
+    (new.id, 'Compras online', 'shopping-bag', '#F59E0B', true),
+    (new.id, 'Supermercado', 'store', '#10B981', true),
+    (new.id, 'Restaurantes', 'utensils', '#EF4444', true),
+    (new.id, 'Transporte', 'car', '#3B82F6', true),
+    (new.id, 'Servicios públicos', 'zap', '#6366F1', true),
+    (new.id, 'Transferencias', 'arrow-right-left', '#EC4899', true),
+    (new.id, 'Salud', 'heart-pulse', '#14B8A6', true),
+    (new.id, 'Entretenimiento', 'gamepad-2', '#F97316', true),
+    (new.id, 'Educación', 'graduation-cap', '#06B6D4', true),
+    (new.id, 'Efectivo', 'banknote', '#84CC16', true),
+    (new.id, 'Ingresos', 'trending-up', '#22C55E', true),
+    (new.id, 'Otros', 'package', '#9CA3AF', true);
   return new;
 end;
 $$ language plpgsql security definer;
@@ -245,7 +245,7 @@ begin
     select r.merchant, r.avg_amount,
       (extract(epoch from (r.last_date - r.first_date)) / nullif(r.occurrences - 1, 0) / 86400)::int as frequency_days,
       r.last_date, r.occurrences,
-      coalesce(c.name, 'Otros') as category_name, coalesce(c.icon, '📦') as category_icon, coalesce(c.color, '#9CA3AF') as category_color
+      coalesce(c.name, 'Otros') as category_name, coalesce(c.icon, 'package') as category_icon, coalesce(c.color, '#9CA3AF') as category_color
     from recurring r left join public.categories c on c.id = r.category_id
     where r.occurrences >= 2 order by r.avg_amount desc;
 end;
@@ -267,7 +267,7 @@ begin
         and t.transaction_date < date_trunc('month', now())
       group by t.category_id
     )
-    select coalesce(c.name, 'Otros'), coalesce(c.icon, '📦'),
+    select coalesce(c.name, 'Otros'), coalesce(c.icon, 'package'),
       coalesce(cm.total, 0)::bigint, coalesce(pm.total, 0)::bigint,
       case when coalesce(pm.total, 0) = 0 then null
         else round(((coalesce(cm.total, 0) - pm.total)::numeric / pm.total) * 100, 1) end

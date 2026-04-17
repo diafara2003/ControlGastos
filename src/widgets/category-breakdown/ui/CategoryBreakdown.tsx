@@ -4,6 +4,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/src/shared/ui/card";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { PieChartIcon } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 
 interface CategoryData {
   name: string;
@@ -103,7 +104,8 @@ export function CategoryBreakdown({ data }: CategoryBreakdownProps) {
                         className="h-2.5 w-2.5 flex-shrink-0 rounded-full"
                         style={{ backgroundColor: item.color, boxShadow: `0 0 0 2px white, 0 0 0 3px ${item.color}40` }}
                       />
-                      <span className="truncate text-gray-600 text-xs">{item.icon} {item.name}</span>
+                      <LucideIcon name={item.icon} size={12} color={item.color} />
+                      <span className="truncate text-gray-600 text-xs">{item.name}</span>
                     </div>
                     <span className="flex-shrink-0 font-semibold text-gray-800 ml-2 text-xs">
                       {pct}%

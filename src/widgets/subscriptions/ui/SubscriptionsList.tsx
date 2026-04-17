@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/src/shared/ui/card";
 import { Badge } from "@/src/shared/ui/badge";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { RefreshCw } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 
 interface Subscription {
   merchant: string;
@@ -66,7 +67,7 @@ export function SubscriptionsList({ subscriptions }: SubscriptionsListProps) {
             className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <span>{sub.category_icon}</span>
+              <LucideIcon name={sub.category_icon} size={16} color={sub.category_color} />
               <div className="min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {sub.merchant}

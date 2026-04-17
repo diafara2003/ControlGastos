@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { LoginForm } from "@/src/features/auth";
 import { APP_NAME, APP_DESCRIPTION } from "@/src/shared/config/constants";
 import { createClient } from "@/src/shared/api/supabase/client";
-import { Shield } from "lucide-react";
+import { Shield, Wallet } from "lucide-react";
 
 export function LoginPage() {
   const router = useRouter();
@@ -36,7 +36,7 @@ export function LoginPage() {
         {/* Logo and branding */}
         <div className="mb-10 text-center animate-fade-up">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25">
-            <span className="text-3xl">💰</span>
+            <Wallet className="h-8 w-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900">{APP_NAME}</h1>
           <p className="mt-2 text-sm text-gray-500 leading-relaxed">{APP_DESCRIPTION}</p>

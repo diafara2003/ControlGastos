@@ -287,8 +287,8 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-500">
-              Los correos se sincronizan automáticamente cada 6 horas. También
-              puedes sincronizar manualmente.
+              Los correos se sincronizan automáticamente cada 5 segundos mientras
+              la app está abierta. También puedes forzar una sincronización.
             </p>
             <Button
               onClick={handleSync}

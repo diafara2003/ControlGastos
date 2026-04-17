@@ -103,7 +103,7 @@ export function EditTransactionForm({
               <option value="">Sin categoría</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
+                  {cat.name}
                 </option>
               ))}
             </Select>

@@ -76,7 +76,7 @@ begin
       r.last_date,
       r.occurrences,
       coalesce(c.name, 'Otros') as category_name,
-      coalesce(c.icon, '📦') as category_icon,
+      coalesce(c.icon, 'package') as category_icon,
       coalesce(c.color, '#9CA3AF') as category_color
     from recurring r
     left join public.categories c on c.id = r.category_id
@@ -115,7 +115,7 @@ begin
     )
     select
       coalesce(c.name, 'Otros') as category_name,
-      coalesce(c.icon, '📦') as category_icon,
+      coalesce(c.icon, 'package') as category_icon,
       coalesce(cm.total, 0)::bigint as current_month_total,
       coalesce(pm.total, 0)::bigint as previous_month_total,
       case

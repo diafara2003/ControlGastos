@@ -24,19 +24,19 @@ begin
   -- Seed default categories for new user
   insert into public.categories (user_id, name, icon, color, is_default)
   values
-    (new.id, 'Suscripciones', '🔄', '#8B5CF6', true),
-    (new.id, 'Compras online', '🛒', '#F59E0B', true),
-    (new.id, 'Supermercado', '🏪', '#10B981', true),
-    (new.id, 'Restaurantes', '🍽️', '#EF4444', true),
-    (new.id, 'Transporte', '🚗', '#3B82F6', true),
-    (new.id, 'Servicios públicos', '💡', '#6366F1', true),
-    (new.id, 'Transferencias', '💸', '#EC4899', true),
-    (new.id, 'Salud', '🏥', '#14B8A6', true),
-    (new.id, 'Entretenimiento', '🎮', '#F97316', true),
-    (new.id, 'Educación', '📚', '#06B6D4', true),
-    (new.id, 'Efectivo', '💵', '#84CC16', true),
-    (new.id, 'Ingresos', '💰', '#22C55E', true),
-    (new.id, 'Otros', '📦', '#9CA3AF', true);
+    (new.id, 'Suscripciones', 'repeat', '#8B5CF6', true),
+    (new.id, 'Compras online', 'shopping-bag', '#F59E0B', true),
+    (new.id, 'Supermercado', 'store', '#10B981', true),
+    (new.id, 'Restaurantes', 'utensils', '#EF4444', true),
+    (new.id, 'Transporte', 'car', '#3B82F6', true),
+    (new.id, 'Servicios públicos', 'zap', '#6366F1', true),
+    (new.id, 'Transferencias', 'arrow-right-left', '#EC4899', true),
+    (new.id, 'Salud', 'heart-pulse', '#14B8A6', true),
+    (new.id, 'Entretenimiento', 'gamepad-2', '#F97316', true),
+    (new.id, 'Educación', 'graduation-cap', '#06B6D4', true),
+    (new.id, 'Efectivo', 'banknote', '#84CC16', true),
+    (new.id, 'Ingresos', 'trending-up', '#22C55E', true),
+    (new.id, 'Otros', 'package', '#9CA3AF', true);
   return new;
 end;
 $$ language plpgsql security definer;
@@ -77,7 +77,7 @@ create table public.categories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users on delete cascade not null,
   name text not null,
-  icon text not null default '📦',
+  icon text not null default 'package',
   color text not null default '#9CA3AF',
   is_default boolean not null default false,
   created_at timestamptz not null default now()

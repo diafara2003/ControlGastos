@@ -3,6 +3,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/src/shared/ui/card";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 
 interface ComparisonItem {
   category_name: string;
@@ -41,7 +42,7 @@ export function MonthlyComparison({ data }: MonthlyComparisonProps) {
               className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <span>{item.category_icon}</span>
+                <LucideIcon name={item.category_icon} size={16} className="text-gray-500" />
                 <span className="text-sm text-gray-700 truncate">
                   {item.category_name}
                 </span>
