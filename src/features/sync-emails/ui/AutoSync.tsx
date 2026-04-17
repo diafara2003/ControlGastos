@@ -11,10 +11,7 @@ export function AutoSync() {
   const registeredRef = useRef(false);
   const initialDoneRef = useRef(false);
 
-  const registerAndStoreToken = useCallback(async () => {
-    if (registeredRef.current) return;
-    registeredRef.current = true;
-
+  const refreshAndStoreToken = useCallback(async () => {
     const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
@@ -23,7 +20,7 @@ export function AutoSync() {
     const userEmail = session.user.email;
     if (!userEmail) return;
 
-    // For Azure/Outlook users: auto-register account and store provider token
+    // For Azure users: update provider token on every sync
     if (provider === "azure" && session.provider_token) {
       const { data: existing } = await supabase
         .from("email_accounts")
@@ -32,13 +29,11 @@ export function AutoSync() {
         .limit(1);
 
       if (existing && existing.length > 0) {
-        // Update token
         await supabase
           .from("email_accounts")
           .update({ provider_token_encrypted: session.provider_token })
           .eq("email", userEmail);
-      } else {
-        // Create account
+      } else if (!registeredRef.current) {
         await supabase.from("email_accounts").insert({
           user_id: session.user.id,
           provider: "outlook",
@@ -47,6 +42,7 @@ export function AutoSync() {
           is_active: true,
         });
       }
+      registeredRef.current = true;
     }
   }, []);
 
@@ -56,6 +52,9 @@ export function AutoSync() {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Refresh token before syncing
+    await refreshAndStoreToken();
 
     const { data: accounts } = await supabase
       .from("email_accounts")
@@ -73,11 +72,9 @@ export function AutoSync() {
     } finally {
       syncingRef.current = false;
     }
-  }, []);
+  }, [refreshAndStoreToken]);
 
   useEffect(() => {
-    registerAndStoreToken();
-
     const initialSync = setTimeout(async () => {
       await sync(20);
       initialDoneRef.current = true;
@@ -93,7 +90,7 @@ export function AutoSync() {
       clearTimeout(initialSync);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [sync, registerAndStoreToken]);
+  }, [sync]);
 
   return null;
 }

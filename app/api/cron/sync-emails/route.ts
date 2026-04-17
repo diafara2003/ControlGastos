@@ -89,6 +89,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 
     try {
       // 1. Fetch emails — IMAP for Gmail, Graph API for Outlook
+      console.log(`Sync account: ${account.email} | provider: ${account.provider} | imap: ${!!account.imap_host} | token: ${!!account.provider_token_encrypted} | maxEmails: ${maxEmails}`);
       let emails;
       if (account.imap_host && account.imap_password_encrypted) {
         // Has IMAP credentials (Gmail, etc.)
@@ -101,11 +102,13 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
           maxEmails
         );
       } else {
+        console.log(`Skipping account: no credentials for ${account.email}`);
         logEntry.errors.push("No IMAP credentials configured");
         results.push(logEntry);
         continue;
       }
 
+      console.log(`Fetched ${emails.length} emails for ${account.email}`);
       logEntry.processed = emails.length;
 
       if (emails.length === 0) {
