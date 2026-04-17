@@ -79,7 +79,7 @@ export function DashboardPage() {
         await Promise.all([
           getTransactions({ startDate: start, endDate: end }),
           getCategoryBreakdown(start, end).catch(() => []),
-          getMonthlyTotals(12).catch(() => []),
+          getMonthlyTotals(selectedDate, 6).catch(() => []),
           Promise.resolve(supabase.rpc("get_monthly_comparison"))
             .then((r) => r.data ?? [])
             .catch(() => []),

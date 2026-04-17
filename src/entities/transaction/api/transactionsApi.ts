@@ -49,11 +49,54 @@ export async function getDistinctCards(): Promise<string[]> {
   return unique;
 }
 
-export async function getMonthlyTotals(months: number = 6) {
+/**
+ * Get monthly totals centered around a reference date.
+ * Returns 12 months of data: 6 before and 6 after (or up to current month).
+ */
+export async function getMonthlyTotals(
+  referenceDate: Date = new Date(),
+  monthsBack: number = 6
+): Promise<{ month: string; expenses: number; income: number }[]> {
   const supabase = createClient();
-  const { data, error } = await supabase.rpc("get_monthly_totals", {
-    num_months: months,
-  });
+
+  // Calculate date range
+  const start = new Date(referenceDate);
+  start.setMonth(start.getMonth() - monthsBack);
+  start.setDate(1);
+
+  const end = new Date(referenceDate);
+  end.setMonth(end.getMonth() + 6);
+  end.setDate(0); // last day of previous month
+
+  // Cap at current month
+  const now = new Date();
+  const endCapped = end > now ? now : end;
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("type, amount, transaction_date")
+    .gte("transaction_date", start.toISOString())
+    .lte("transaction_date", endCapped.toISOString());
+
   if (error) throw error;
-  return data;
+
+  // Group by month
+  const monthMap = new Map<string, { expenses: number; income: number }>();
+
+  for (const t of data ?? []) {
+    const d = new Date(t.transaction_date);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const entry = monthMap.get(key) ?? { expenses: 0, income: 0 };
+    if (t.type === "expense") {
+      entry.expenses += t.amount;
+    } else {
+      entry.income += t.amount;
+    }
+    monthMap.set(key, entry);
+  }
+
+  // Sort and return
+  return Array.from(monthMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([month, totals]) => ({ month, ...totals }));
 }
