@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
 import { SpendingChart } from "@/src/widgets/spending-chart";
 import { CategoryBreakdown } from "@/src/widgets/category-breakdown";
 import { RecentTransactions } from "@/src/widgets/recent-transactions";
@@ -11,7 +10,7 @@ import { getCategoryBreakdown } from "@/src/entities/category";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
 import { Spinner } from "@/src/shared/ui/spinner";
-import { ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface MonthlyData {
   month: string;
@@ -151,24 +150,6 @@ export function DashboardPage() {
             totalIncome={totals.income}
             selectedDate={selectedDate}
           />
-
-          {/* Quick actions */}
-          <div className="flex gap-3 px-1">
-            <Link
-              href="/transactions?action=add&type=expense"
-              className="flex-1 flex items-center justify-center gap-2 rounded-full bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-all active:scale-[0.97] active:bg-gray-800"
-            >
-              <Plus className="h-4 w-4" />
-              Agregar gasto
-            </Link>
-            <Link
-              href="/transactions?action=add&type=income"
-              className="flex-1 flex items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition-all active:scale-[0.97] active:bg-gray-50"
-            >
-              <TrendingUp className="h-4 w-4" />
-              Agregar ingreso
-            </Link>
-          </div>
 
           {/* Recent transactions */}
           <RecentTransactions transactions={transactions.slice(0, 4)} />
