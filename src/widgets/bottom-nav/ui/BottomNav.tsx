@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, Tag, Settings } from "lucide-react";
+import { LayoutDashboard, Receipt, Settings } from "lucide-react";
 import { cn } from "@/src/shared/lib/cn";
 
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/transactions", label: "Movimientos", icon: Receipt },
-  { href: "/categories", label: "Categorias", icon: Tag },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
@@ -25,7 +24,7 @@ export function BottomNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "relative flex flex-col items-center gap-0.5 px-4 py-2.5 min-w-[4rem] text-[11px] transition-all duration-200",
+                "relative flex flex-col items-center gap-0.5 px-6 py-2.5 min-w-[5rem] text-[11px] transition-all duration-200",
                 isActive
                   ? "text-emerald-600"
                   : "text-gray-400 active:text-gray-600"
@@ -33,7 +32,7 @@ export function BottomNav() {
             >
               {/* Active indicator bar */}
               {isActive && (
-                <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-8 rounded-full bg-emerald-500 animate-nav-indicator" />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-10 rounded-full bg-emerald-500 animate-nav-indicator" />
               )}
               <div className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200",
