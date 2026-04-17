@@ -1,5 +1,5 @@
 import { chatCompletion } from "@/src/shared/api/azure-openai";
-import { BUILTIN_RULES } from "./rules";
+import { BUILTIN_RULES, classifyByRules } from "./rules";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import type { ParsedTransaction } from "@/src/features/sync-emails/lib/patterns";
 
@@ -11,7 +11,7 @@ export interface ClassificationResult {
 /**
  * Classify a parsed transaction through the pipeline:
  * 1. User-defined rules (from DB)
- * 2. Built-in keyword rules
+ * 2. Built-in keyword + type-based rules
  * 3. Azure OpenAI fallback
  */
 export async function classifyTransaction(
@@ -33,7 +33,6 @@ export async function classifyTransaction(
     for (const rule of userRules) {
       const pattern = (rule.pattern as string).toLowerCase();
       if (searchText.includes(pattern)) {
-        // Supabase join returns object or array depending on relation
         const cat = rule.category as unknown as { name: string } | { name: string }[] | null;
         const catName = Array.isArray(cat)
           ? cat[0]?.name ?? "Otros"
@@ -43,11 +42,14 @@ export async function classifyTransaction(
     }
   }
 
-  // Level 2: Built-in rules
-  for (const [categoryName, keywords] of Object.entries(BUILTIN_RULES)) {
-    if (keywords.some((kw) => searchText.includes(kw))) {
-      return { categoryName, method: "builtin" };
-    }
+  // Level 2: Built-in keyword + type-based rules
+  const builtinResult = classifyByRules(
+    transaction.merchant,
+    transaction.description,
+    transaction.type
+  );
+  if (builtinResult) {
+    return builtinResult;
   }
 
   // Level 3: Azure OpenAI
@@ -57,7 +59,7 @@ export async function classifyTransaction(
       [
         {
           role: "system",
-          content: `Clasifica esta transacción en UNA de estas categorías: ${categories}, Transferencias, Otros.
+          content: `Clasifica esta transacción en UNA de estas categorías: ${categories}, Otros.
 Responde SOLO con el nombre exacto de la categoría, sin explicación.`,
         },
         {
@@ -72,10 +74,8 @@ Tipo: ${transaction.type}`,
     );
 
     const categoryName = response.trim();
-    // Validate it's a known category
     const allCategories = [
       ...Object.keys(BUILTIN_RULES),
-      "Transferencias",
       "Otros",
     ];
     if (allCategories.includes(categoryName)) {
@@ -85,6 +85,10 @@ Tipo: ${transaction.type}`,
     // AI unavailable, fall through
   }
 
-  // Fallback
+  // Fallback based on type
+  if (transaction.type === "income") {
+    return { categoryName: "Ingresos", method: "none" };
+  }
+
   return { categoryName: "Otros", method: "none" };
 }

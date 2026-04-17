@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, Settings, LogOut, Wallet, User } from "lucide-react";
+import { LayoutDashboard, Receipt, Settings, LogOut, Wallet, User, FileBarChart } from "lucide-react";
 import { cn } from "@/src/shared/lib/cn";
 import { APP_NAME } from "@/src/shared/config/constants";
 import { useAuth } from "@/src/features/auth";
@@ -12,6 +12,7 @@ import { createClient } from "@/src/shared/api/supabase/client";
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
   { href: "/transactions", label: "Movimientos", icon: Receipt },
+  { href: "/reports", label: "Reportes", icon: FileBarChart },
   { href: "/settings", label: "Ajustes", icon: Settings },
 ];
 
