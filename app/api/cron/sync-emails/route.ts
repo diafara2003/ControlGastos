@@ -167,23 +167,34 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 
           const categoryId = categoryMap.get(classification.categoryName) ?? null;
 
-          await supabase.from("transactions").insert({
-            user_id: account.user_id,
-            email_account_id: account.id,
-            type: result.parsed.type,
-            amount: result.parsed.amount,
-            merchant: result.parsed.merchant,
-            description: result.parsed.description,
-            category_id: categoryId,
-            transaction_date: result.parsed.transactionDate.toISOString(),
-            classification_method:
-              classification.method === "none"
-                ? null
-                : classification.method,
-            email_message_id: result.email.messageId,
-            raw_email_snippet: result.email.snippet?.slice(0, 500),
-            card_last_four: result.parsed.cardLastFour,
-          });
+          const { error: insertError } = await supabase.from("transactions").upsert(
+            {
+              user_id: account.user_id,
+              email_account_id: account.id,
+              type: result.parsed.type,
+              amount: result.parsed.amount,
+              merchant: result.parsed.merchant,
+              description: result.parsed.description,
+              category_id: categoryId,
+              transaction_date: result.parsed.transactionDate.toISOString(),
+              classification_method:
+                classification.method === "none"
+                  ? null
+                  : classification.method,
+              email_message_id: result.email.messageId,
+              raw_email_snippet: result.email.snippet?.slice(0, 500),
+              card_last_four: result.parsed.cardLastFour,
+            },
+            { onConflict: "user_id,email_message_id", ignoreDuplicates: true }
+          );
+
+          if (insertError) {
+            // Skip duplicates silently
+            if (!insertError.message.includes("duplicate")) {
+              throw insertError;
+            }
+            continue;
+          }
 
           logEntry.created++;
         } catch (err) {
