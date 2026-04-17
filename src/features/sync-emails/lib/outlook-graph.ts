@@ -24,8 +24,9 @@ export async function fetchOutlookGraphEmails(
   let url = `https://graph.microsoft.com/v1.0/me/messages?$top=${fetchCount}&$orderby=receivedDateTime desc&$select=id,from,subject,receivedDateTime,body,bodyPreview`;
 
   if (lastSyncAt) {
-    const since = new Date(lastSyncAt).toISOString();
-    url += `&$filter=receivedDateTime ge ${since}`;
+    // Go back 5 minutes to avoid missing emails at the boundary
+    const sinceDate = new Date(new Date(lastSyncAt).getTime() - 5 * 60 * 1000);
+    url += `&$filter=receivedDateTime ge ${sinceDate.toISOString()}`;
   }
 
   const res = await fetch(url, {
