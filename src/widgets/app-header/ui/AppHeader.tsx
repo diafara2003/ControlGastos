@@ -42,7 +42,7 @@ export function AppHeader() {
   }, [menuOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-3 pb-2 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 mx-auto max-w-lg md:hidden">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-3 pb-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-gray-100/50 dark:border-slate-800/50 mx-auto max-w-lg md:hidden">
       <span className="text-sm font-bold text-emerald-600 tracking-tight">
         {APP_NAME}
       </span>
@@ -67,7 +67,7 @@ export function AppHeader() {
         </button>
 
         {menuOpen && (
-          <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-gray-100 bg-white p-1 shadow-lg animate-fade-up">
+          <div className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-lg animate-fade-up">
             <div className="px-3 py-2 border-b border-gray-50">
               {user?.name && (
                 <p className="text-sm font-medium text-gray-900 truncate">
