@@ -4,7 +4,17 @@ import { createClient } from "@/src/shared/api/supabase/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
+  const error_param = searchParams.get("error");
+  const error_desc = searchParams.get("error_description");
   const next = searchParams.get("next") ?? "/dashboard";
+
+  // Log auth errors
+  if (error_param) {
+    console.error("Auth callback error:", error_param, error_desc);
+    return NextResponse.redirect(
+      `${origin}/login?error=${encodeURIComponent(error_param)}&desc=${encodeURIComponent(error_desc ?? "")}`
+    );
+  }
 
   if (code) {
     const supabase = await createClient();
@@ -12,6 +22,7 @@ export async function GET(request: Request) {
     if (!error) {
       return NextResponse.redirect(`${origin}${next}`);
     }
+    console.error("Code exchange error:", error.message);
   }
 
   // If no code, the token might be in the hash fragment.
