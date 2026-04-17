@@ -1,21 +1,28 @@
-import { FINANCIAL_SENDERS } from "@/src/shared/config/constants";
 import type { FetchedEmail } from "./gmail";
 
+// Keywords that indicate a financial email (broad matching)
+const FINANCIAL_KEYWORDS = [
+  "bancolombia", "nequi", "davivienda", "banco", "bank",
+  "cajasocial", "avvillas", "bbva", "scotiabank", "colpatria",
+  "transacción", "transaccion", "compra", "pago", "retiro",
+  "transferencia", "débito", "debito", "crédito", "credito",
+  "tarjeta", "cuenta", "saldo", "nómina", "nomina",
+  "consignación", "consignacion", "PSE",
+];
+
 /**
- * Fetch financial emails from Outlook using Microsoft Graph API.
- * Strategy: fetch latest N emails, filter by bank sender in code.
+ * Fetch emails from Outlook using Microsoft Graph API.
+ * Fetches all recent emails and filters for financial content.
  */
 export async function fetchOutlookGraphEmails(
   accessToken: string,
   lastSyncAt: string | null,
   maxResults: number = 50
 ): Promise<FetchedEmail[]> {
-  // Always fetch enough emails to find bank senders (they may be buried)
   const fetchCount = Math.min(Math.max(maxResults * 10, 100), 500);
 
   let url = `https://graph.microsoft.com/v1.0/me/messages?$top=${fetchCount}&$orderby=receivedDateTime desc&$select=id,from,subject,receivedDateTime,body,bodyPreview`;
 
-  // If we have a last sync date, filter by it
   if (lastSyncAt) {
     const since = new Date(lastSyncAt).toISOString();
     url += `&$filter=receivedDateTime ge ${since}`;
@@ -39,18 +46,24 @@ export async function fetchOutlookGraphEmails(
     return [];
   }
 
-  // Filter by financial senders in code
-  const senderLower = FINANCIAL_SENDERS.map((s) => s.toLowerCase());
-
+  // Filter: keep emails that look financial (by sender domain or subject/body keywords)
   const filtered = data.value.filter(
-    (msg: { from?: { emailAddress?: { address?: string } } }) => {
+    (msg: {
+      from?: { emailAddress?: { address?: string } };
+      subject?: string;
+      bodyPreview?: string;
+    }) => {
       const from = msg.from?.emailAddress?.address?.toLowerCase() ?? "";
-      return senderLower.some((s) => from.includes(s));
+      const subject = (msg.subject ?? "").toLowerCase();
+      const preview = (msg.bodyPreview ?? "").toLowerCase();
+      const combined = `${from} ${subject} ${preview}`;
+
+      return FINANCIAL_KEYWORDS.some((kw) => combined.includes(kw.toLowerCase()));
     }
   );
 
   console.log(
-    `Graph API: fetched ${data.value.length} emails, ${filtered.length} from banks`
+    `Graph API: fetched ${data.value.length} emails, ${filtered.length} financial`
   );
 
   return filtered.slice(0, maxResults).map(
