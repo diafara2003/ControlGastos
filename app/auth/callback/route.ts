@@ -8,11 +8,14 @@ export async function GET(request: Request) {
   const error_desc = searchParams.get("error_description");
   const next = searchParams.get("next") ?? "/dashboard";
 
-  // Log auth errors
+  // Use configured app URL or fallback to origin
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
+
+  // Log auth errors from provider
   if (error_param) {
     console.error("Auth callback error:", error_param, error_desc);
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent(error_param)}&desc=${encodeURIComponent(error_desc ?? "")}`
+      `${appUrl}/login?error=${encodeURIComponent(error_param)}&desc=${encodeURIComponent(error_desc ?? "")}`
     );
   }
 
@@ -20,33 +23,14 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${appUrl}${next}`);
     }
     console.error("Code exchange error:", error.message);
+    return NextResponse.redirect(
+      `${appUrl}/login?error=exchange&desc=${encodeURIComponent(error.message)}`
+    );
   }
 
-  // If no code, the token might be in the hash fragment.
-  // Serve a page that extracts it client-side and redirects.
-  const html = `
-    <!DOCTYPE html>
-    <html>
-      <head><meta charset="utf-8"><title>Autenticando...</title></head>
-      <body>
-        <p>Autenticando...</p>
-        <script>
-          const hash = window.location.hash;
-          if (hash && hash.includes('access_token')) {
-            // Supabase client-side will pick up the hash automatically
-            window.location.href = '/dashboard';
-          } else {
-            window.location.href = '/login?error=auth';
-          }
-        </script>
-      </body>
-    </html>
-  `;
-
-  return new NextResponse(html, {
-    headers: { "Content-Type": "text/html" },
-  });
+  // No code — redirect to login
+  return NextResponse.redirect(`${appUrl}/login?error=no_code`);
 }
