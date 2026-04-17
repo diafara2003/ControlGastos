@@ -42,7 +42,7 @@ export function AppHeader() {
   }, [menuOpen]);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-3 pb-2 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 mx-auto max-w-lg">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 pt-3 pb-2 bg-white/90 backdrop-blur-xl border-b border-gray-100/50 mx-auto max-w-lg md:hidden">
       <span className="text-sm font-bold text-emerald-600 tracking-tight">
         {APP_NAME}
       </span>
