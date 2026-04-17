@@ -32,6 +32,10 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Sidebar background */
+.sidebar-bg { background-color: #ffffff; }
+.dark .sidebar-bg { background-color: #0f172a; border-color: #1e293b; }
+
 /* Dark mode overrides for common elements */
 .dark .bg-white { background-color: var(--card-bg); }
 .dark .border-gray-200 { border-color: var(--card-border); }
