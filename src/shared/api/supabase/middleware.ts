@@ -25,21 +25,22 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // getSession() refreshes the token if expired, getUser() does not
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   const isAuthPage = request.nextUrl.pathname === "/login";
   const isPublicRoute =
     isAuthPage || request.nextUrl.pathname.startsWith("/auth/");
 
-  if (!user && !isPublicRoute) {
+  if (!session && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  if (session && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
