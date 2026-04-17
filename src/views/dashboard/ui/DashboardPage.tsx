@@ -182,6 +182,7 @@ export function DashboardPage() {
           <SpendingChart
             totalExpenses={totals.expenses}
             totalIncome={totals.income}
+            selectedDate={selectedDate}
           />
 
           <BudgetProgress budgets={budgets} />
