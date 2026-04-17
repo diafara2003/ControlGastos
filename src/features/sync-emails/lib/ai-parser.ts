@@ -11,7 +11,8 @@ Responde SOLO con un objeto JSON válido (sin markdown, sin explicación):
   "amount": <número entero en COP>,
   "merchant": "<nombre del comercio o destinatario>",
   "description": "<descripción corta>",
-  "transactionDate": "<fecha ISO 8601>"
+  "transactionDate": "<fecha ISO 8601>",
+  "cardLastFour": "<últimos 4 dígitos de tarjeta o null>"
 }
 
 Si NO puedes identificar una transacción financiera, responde: {"error": "no_transaction"}
@@ -63,6 +64,7 @@ ${email.bodyText.slice(0, 2000)}`;
       transactionDate: parsed.transactionDate
         ? new Date(parsed.transactionDate)
         : new Date(email.date),
+      cardLastFour: parsed.cardLastFour || null,
     };
   } catch (err) {
     console.error("AI parsing failed:", err);

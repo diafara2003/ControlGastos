@@ -160,6 +160,7 @@ async function syncAllAccounts(filterUserId?: string) {
                 : classification.method,
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
+            card_last_four: result.parsed.cardLastFour,
           });
 
           logEntry.created++;

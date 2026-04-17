@@ -1,4 +1,5 @@
 import type { BankPattern, ParsedTransaction } from "./types";
+import { extractCardLastFour } from "./types";
 
 function parseAmount(text: string): number | null {
   const match = text.match(/\$\s*([\d.,]+)/);
@@ -19,6 +20,7 @@ export const nequiPattern: BankPattern = {
 
   parse(bodyText: string, subject: string, date: string): ParsedTransaction | null {
     const text = bodyText.toLowerCase();
+    const cardLastFour = extractCardLastFour(bodyText);
 
     // Envío de dinero: "Enviaste $50,000 a Juan"
     const envioMatch = bodyText.match(
@@ -33,6 +35,7 @@ export const nequiPattern: BankPattern = {
           merchant: envioMatch[2].trim(),
           description: "Envío Nequi",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -50,6 +53,7 @@ export const nequiPattern: BankPattern = {
           merchant: pagoMatch[2].trim(),
           description: "Pago en comercio",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -67,6 +71,7 @@ export const nequiPattern: BankPattern = {
           merchant: "Retiro Nequi",
           description: "Retiro de efectivo",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -84,6 +89,7 @@ export const nequiPattern: BankPattern = {
           merchant: recibidoMatch[2]?.trim() ?? "Nequi",
           description: "Dinero recibido",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -100,6 +106,7 @@ export const nequiPattern: BankPattern = {
           merchant: "Nequi",
           description: subject || "Notificación Nequi",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }

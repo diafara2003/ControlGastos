@@ -27,6 +27,9 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
         </p>
         <p className="text-xs text-gray-500">
           {formatShortDate(transaction.transaction_date)}
+          {transaction.card_last_four && (
+            <span className="text-gray-400"> · *{transaction.card_last_four}</span>
+          )}
           {transaction.category && (
             <>
               {" · "}

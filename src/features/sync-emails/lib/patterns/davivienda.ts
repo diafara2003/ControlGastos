@@ -1,4 +1,5 @@
 import type { BankPattern, ParsedTransaction } from "./types";
+import { extractCardLastFour } from "./types";
 
 function parseAmount(text: string): number | null {
   const match = text.match(/\$\s*([\d.,]+)/);
@@ -18,6 +19,7 @@ export const daviviendaPattern: BankPattern = {
   bankName: "Davivienda",
 
   parse(bodyText: string, subject: string, date: string): ParsedTransaction | null {
+    const cardLastFour = extractCardLastFour(bodyText);
     const text = bodyText.toLowerCase();
 
     // Compra: "compra por $X en COMERCIO"
@@ -33,6 +35,7 @@ export const daviviendaPattern: BankPattern = {
           merchant: compraMatch[2].trim(),
           description: "Compra con tarjeta",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -50,6 +53,7 @@ export const daviviendaPattern: BankPattern = {
           merchant: pagoMatch[2].trim(),
           description: "Pago",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -67,6 +71,7 @@ export const daviviendaPattern: BankPattern = {
           merchant: "Davivienda",
           description: "Abono recibido",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }
@@ -83,6 +88,7 @@ export const daviviendaPattern: BankPattern = {
           merchant: "Davivienda",
           description: subject || "Notificación Davivienda",
           transactionDate: new Date(date),
+          cardLastFour,
         };
       }
     }

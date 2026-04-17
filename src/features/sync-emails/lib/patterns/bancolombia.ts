@@ -1,4 +1,5 @@
 import type { BankPattern, ParsedTransaction } from "./types";
+import { extractCardLastFour } from "./types";
 
 function parseAmount(text: string): number | null {
   // Bancolombia formats: $150,000.00 or $150.000,00 or $150000
@@ -47,6 +48,7 @@ export const bancolombiaPattern: BankPattern = {
 
   parse(bodyText: string, subject: string, date: string): ParsedTransaction | null {
     const text = bodyText.toLowerCase();
+    const cardLastFour = extractCardLastFour(bodyText);
 
     // --- EXPENSES ---
 
@@ -63,6 +65,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: compraMatch[2].trim(),
           description: "Compra con tarjeta",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -80,6 +83,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: pseMatch[2].trim(),
           description: "Pago PSE",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -97,6 +101,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: "Cajero automático",
           description: "Retiro en cajero",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -114,6 +119,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: transEnviadaMatch[2].trim(),
           description: "Transferencia enviada",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -131,6 +137,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: debitoMatch[2].trim(),
           description: "Débito automático",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -150,6 +157,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: transRecibidaMatch[2]?.trim() ?? "Transferencia recibida",
           description: "Transferencia recibida",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }
@@ -171,6 +179,7 @@ export const bancolombiaPattern: BankPattern = {
             merchant: "Nómina",
             description: "Abono de nómina",
             transactionDate: parseDateFromBody(bodyText, date),
+            cardLastFour,
           };
         }
       }
@@ -193,6 +202,7 @@ export const bancolombiaPattern: BankPattern = {
           merchant: "Bancolombia",
           description: subject || "Notificación Bancolombia",
           transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
         };
       }
     }

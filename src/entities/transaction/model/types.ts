@@ -17,6 +17,7 @@ export interface Transaction {
   notes: string | null;
   email_message_id: string | null;
   raw_email_snippet: string | null;
+  card_last_four: string | null;
   created_at: string;
   updated_at: string;
   // Joined

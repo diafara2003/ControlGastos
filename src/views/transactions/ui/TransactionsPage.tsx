@@ -5,7 +5,7 @@ import {
   TransactionList,
   TransactionFilters,
 } from "@/src/widgets/transaction-list";
-import { getTransactions } from "@/src/entities/transaction";
+import { getTransactions, getDistinctCards } from "@/src/entities/transaction";
 import { getCategories } from "@/src/entities/category";
 import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
@@ -20,11 +20,13 @@ import { Search, Plus } from "lucide-react";
 export function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [cards, setCards] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<
     "expense" | "income" | null
   >(null);
+  const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -33,7 +35,6 @@ export function TransactionsPage() {
     setLoading(true);
     try {
       if (searchQuery.trim()) {
-        // Search mode
         const supabase = createClient();
         const { data } = await supabase.rpc("search_transactions", {
           search_query: searchQuery.trim(),
@@ -43,18 +44,23 @@ export function TransactionsPage() {
         const txns = await getTransactions({
           categoryId: selectedCategory ?? undefined,
           type: selectedType ?? undefined,
+          cardLastFour: selectedCard ?? undefined,
         });
         setTransactions(txns);
       }
 
-      const cats = await getCategories();
+      const [cats, cardList] = await Promise.all([
+        getCategories(),
+        getDistinctCards(),
+      ]);
       setCategories(cats);
+      setCards(cardList);
     } catch (err) {
       console.error("Error loading transactions:", err);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedType, searchQuery]);
+  }, [selectedCategory, selectedType, selectedCard, searchQuery]);
 
   useEffect(() => {
     const timer = setTimeout(loadData, searchQuery ? 300 : 0);
@@ -92,6 +98,9 @@ export function TransactionsPage() {
           onCategoryChange={setSelectedCategory}
           selectedType={selectedType}
           onTypeChange={setSelectedType}
+          cards={cards}
+          selectedCard={selectedCard}
+          onCardChange={setSelectedCard}
         />
       )}
 
@@ -101,7 +110,6 @@ export function TransactionsPage() {
         onTransactionClick={(t) => setEditingTx(t)}
       />
 
-      {/* Edit transaction dialog */}
       {editingTx && (
         <EditTransactionForm
           transaction={editingTx}
@@ -114,7 +122,6 @@ export function TransactionsPage() {
         />
       )}
 
-      {/* Add transaction dialog */}
       <AddTransactionForm
         categories={categories}
         open={showAddForm}

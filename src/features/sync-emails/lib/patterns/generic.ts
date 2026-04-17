@@ -1,4 +1,5 @@
 import type { BankPattern, ParsedTransaction } from "./types";
+import { extractCardLastFour } from "./types";
 
 function parseAmount(text: string): number | null {
   const match = text.match(/\$\s*([\d.,]+)/);
@@ -26,6 +27,7 @@ export const genericPattern: BankPattern = {
 
   parse(bodyText: string, subject: string, date: string): ParsedTransaction | null {
     const text = bodyText.toLowerCase();
+    const cardLastFour = extractCardLastFour(bodyText);
 
     // Income keywords
     const incomeKeywords = [
@@ -73,6 +75,7 @@ export const genericPattern: BankPattern = {
       merchant,
       description: subject || "Notificación bancaria",
       transactionDate: new Date(date),
+      cardLastFour,
     };
   },
 };
