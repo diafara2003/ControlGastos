@@ -93,19 +93,13 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
       if (account.imap_host && account.imap_password_encrypted) {
         // Has IMAP credentials (Gmail, etc.)
         emails = await fetchImapEmails(account, maxEmails);
-      } else if (account.provider === "outlook") {
-        // Outlook via Graph API — get token from user's auth session
-        const { data: { session } } = await supabase.auth.admin.getUserById(account.user_id)
-          .then(() => supabase.auth.getSession())
-          .catch(() => ({ data: { session: null } }));
-
-        const providerToken = session?.provider_token;
-        if (!providerToken) {
-          logEntry.errors.push("No provider token for Outlook — user needs to re-login");
-          results.push(logEntry);
-          continue;
-        }
-        emails = await fetchOutlookGraphEmails(providerToken, account.last_sync_at, maxEmails);
+      } else if (account.provider === "outlook" && account.provider_token_encrypted) {
+        // Outlook via Graph API — use stored provider token
+        emails = await fetchOutlookGraphEmails(
+          account.provider_token_encrypted,
+          account.last_sync_at,
+          maxEmails
+        );
       } else {
         logEntry.errors.push("No IMAP credentials configured");
         results.push(logEntry);

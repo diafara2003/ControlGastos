@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
 
-const QUICK_INTERVAL = 5 * 1000; // 5 seconds for quick checks
+const QUICK_INTERVAL = 5 * 1000; // 5 seconds
 
 export function AutoSync() {
   const syncingRef = useRef(false);
@@ -11,7 +11,7 @@ export function AutoSync() {
   const registeredRef = useRef(false);
   const initialDoneRef = useRef(false);
 
-  const registerOutlookIfNeeded = useCallback(async () => {
+  const registerAndStoreToken = useCallback(async () => {
     if (registeredRef.current) return;
     registeredRef.current = true;
 
@@ -20,25 +20,34 @@ export function AutoSync() {
     if (!session) return;
 
     const provider = session.user.app_metadata?.provider;
-    if (provider !== "azure" || !session.provider_token) return;
-
     const userEmail = session.user.email;
     if (!userEmail) return;
 
-    const { data: existing } = await supabase
-      .from("email_accounts")
-      .select("id")
-      .eq("email", userEmail)
-      .limit(1);
+    // For Azure/Outlook users: auto-register account and store provider token
+    if (provider === "azure" && session.provider_token) {
+      const { data: existing } = await supabase
+        .from("email_accounts")
+        .select("id")
+        .eq("email", userEmail)
+        .limit(1);
 
-    if (existing && existing.length > 0) return;
-
-    await supabase.from("email_accounts").insert({
-      user_id: session.user.id,
-      provider: "outlook",
-      email: userEmail,
-      is_active: true,
-    });
+      if (existing && existing.length > 0) {
+        // Update token
+        await supabase
+          .from("email_accounts")
+          .update({ provider_token_encrypted: session.provider_token })
+          .eq("email", userEmail);
+      } else {
+        // Create account
+        await supabase.from("email_accounts").insert({
+          user_id: session.user.id,
+          provider: "outlook",
+          email: userEmail,
+          provider_token_encrypted: session.provider_token,
+          is_active: true,
+        });
+      }
+    }
   }, []);
 
   const sync = useCallback(async (maxEmails: number) => {
@@ -67,15 +76,13 @@ export function AutoSync() {
   }, []);
 
   useEffect(() => {
-    registerOutlookIfNeeded();
+    registerAndStoreToken();
 
-    // Initial sync: last 20 emails after 2 seconds
     const initialSync = setTimeout(async () => {
       await sync(20);
       initialDoneRef.current = true;
     }, 2000);
 
-    // Quick sync every 5 seconds: last 2 emails
     intervalRef.current = setInterval(() => {
       if (initialDoneRef.current) {
         sync(2);
@@ -86,7 +93,7 @@ export function AutoSync() {
       clearTimeout(initialSync);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [sync, registerOutlookIfNeeded]);
+  }, [sync, registerAndStoreToken]);
 
   return null;
 }
