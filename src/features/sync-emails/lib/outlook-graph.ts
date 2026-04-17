@@ -10,17 +10,17 @@ export async function fetchOutlookGraphEmails(
   lastSyncAt: string | null,
   maxResults: number = 50
 ): Promise<FetchedEmail[]> {
-  // Build OData filter for financial senders
+  // Build OData filter using contains() for partial domain matching
   const senderFilter = FINANCIAL_SENDERS.map(
-    (s) => `from/emailAddress/address eq '${s}'`
+    (s) => `contains(from/emailAddress/address, '${s}')`
   ).join(" or ");
 
   let filter = `(${senderFilter})`;
 
-  // If no last sync, limit to last 30 days
+  // If no last sync, search last 12 months
   const since = lastSyncAt
     ? new Date(lastSyncAt).toISOString()
-    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
   filter += ` and receivedDateTime ge ${since}`;
 
   const params = new URLSearchParams({

@@ -43,7 +43,11 @@ function parseDateFromBody(text: string, fallbackDate: string): Date {
 }
 
 export const bancolombiaPattern: BankPattern = {
-  senders: ["alertasynotificaciones@bancolombia.com.co"],
+  senders: [
+    "alertasynotificaciones@bancolombia.com.co",
+    "alertasynotificaciones@an.notificacionesbancolombia.com",
+    "notificacionesbancolombia.com",
+  ],
   bankName: "Bancolombia",
 
   parse(bodyText: string, subject: string, date: string): ParsedTransaction | null {
