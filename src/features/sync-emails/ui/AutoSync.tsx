@@ -3,7 +3,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
 
-const QUICK_INTERVAL = 5 * 1000; // 5 seconds
+const QUICK_INTERVAL = 5 * 1000;
 
 export function AutoSync() {
   const syncingRef = useRef(false);
@@ -20,27 +20,32 @@ export function AutoSync() {
     const userEmail = session.user.email;
     if (!userEmail) return;
 
-    // For Azure users: update provider token on every sync
-    if (provider === "azure" && session.provider_token) {
-      const { data: existing } = await supabase
-        .from("email_accounts")
-        .select("id")
-        .eq("email", userEmail)
-        .limit(1);
+    if (provider === "azure") {
+      const updates: Record<string, string> = {};
+      if (session.provider_token) updates.provider_token_encrypted = session.provider_token;
+      if (session.provider_refresh_token) updates.provider_refresh_token_encrypted = session.provider_refresh_token;
 
-      if (existing && existing.length > 0) {
-        await supabase
+      if (Object.keys(updates).length > 0) {
+        const { data: existing } = await supabase
           .from("email_accounts")
-          .update({ provider_token_encrypted: session.provider_token })
-          .eq("email", userEmail);
-      } else if (!registeredRef.current) {
-        await supabase.from("email_accounts").insert({
-          user_id: session.user.id,
-          provider: "outlook",
-          email: userEmail,
-          provider_token_encrypted: session.provider_token,
-          is_active: true,
-        });
+          .select("id")
+          .eq("email", userEmail)
+          .limit(1);
+
+        if (existing && existing.length > 0) {
+          await supabase
+            .from("email_accounts")
+            .update(updates)
+            .eq("email", userEmail);
+        } else if (!registeredRef.current) {
+          await supabase.from("email_accounts").insert({
+            user_id: session.user.id,
+            provider: "outlook",
+            email: userEmail,
+            ...updates,
+            is_active: true,
+          });
+        }
       }
       registeredRef.current = true;
     }
@@ -53,7 +58,6 @@ export function AutoSync() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Refresh token before syncing
     await refreshAndStoreToken();
 
     const { data: accounts } = await supabase

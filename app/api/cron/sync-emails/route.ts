@@ -95,11 +95,13 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         // Has IMAP credentials (Gmail, etc.)
         emails = await fetchImapEmails(account, maxEmails);
       } else if (account.provider === "outlook" && account.provider_token_encrypted) {
-        // Outlook via Graph API — use stored provider token
+        // Outlook via Graph API — with auto token refresh
         emails = await fetchOutlookGraphEmails(
           account.provider_token_encrypted,
           account.last_sync_at,
-          maxEmails
+          maxEmails,
+          account.provider_refresh_token_encrypted,
+          account.id
         );
       } else {
         console.log(`Skipping account: no credentials for ${account.email}`);
