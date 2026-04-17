@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import { fetchImapEmails } from "@/src/features/sync-emails/lib/imap";
+import { fetchOutlookGraphEmails } from "@/src/features/sync-emails/lib/outlook-graph";
 import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { parseWithAI } from "@/src/features/sync-emails/lib/ai-parser";
 import { classifyTransaction } from "@/src/features/classify-transaction";
@@ -86,8 +87,29 @@ async function syncAllAccounts(filterUserId?: string) {
       .single();
 
     try {
-      // 1. Fetch emails via IMAP
-      const emails = await fetchImapEmails(account);
+      // 1. Fetch emails — IMAP for Gmail, Graph API for Outlook
+      let emails;
+      if (account.imap_host && account.imap_password_encrypted) {
+        // Has IMAP credentials (Gmail, etc.)
+        emails = await fetchImapEmails(account);
+      } else if (account.provider === "outlook") {
+        // Outlook via Graph API — get token from user's auth session
+        const { data: { session } } = await supabase.auth.admin.getUserById(account.user_id)
+          .then(() => supabase.auth.getSession())
+          .catch(() => ({ data: { session: null } }));
+
+        const providerToken = session?.provider_token;
+        if (!providerToken) {
+          logEntry.errors.push("No provider token for Outlook — user needs to re-login");
+          results.push(logEntry);
+          continue;
+        }
+        emails = await fetchOutlookGraphEmails(providerToken, account.last_sync_at);
+      } else {
+        logEntry.errors.push("No IMAP credentials configured");
+        results.push(logEntry);
+        continue;
+      }
 
       logEntry.processed = emails.length;
 
