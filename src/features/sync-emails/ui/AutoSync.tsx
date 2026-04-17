@@ -70,7 +70,12 @@ export function AutoSync() {
 
     syncingRef.current = true;
     try {
-      await fetch(`/api/sync?maxEmails=${maxEmails}`, { method: "POST" });
+      const res = await fetch(`/api/sync?maxEmails=${maxEmails}`, { method: "POST" });
+      const data = await res.json().catch(() => null);
+      // If new transactions were created, notify the app to refresh
+      if (data?.results?.some((r: { created?: number }) => (r.created ?? 0) > 0)) {
+        window.dispatchEvent(new CustomEvent("transactions-updated"));
+      }
     } catch {
       // Silently fail
     } finally {

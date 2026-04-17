@@ -148,9 +148,9 @@ export const bancolombiaPattern: BankPattern = {
 
     // --- INCOME ---
 
-    // Transferencia recibida: "recibiste transferencia por $X de NOMBRE"
+    // Transferencia recibida: "recibiste una transferencia por $X de NOMBRE en tu cuenta"
     const transRecibidaMatch = bodyText.match(
-      /(?:recibi(?:ste|ó)|abono|consignaci[oó]n)\s+(?:de\s+)?(?:transferencia\s+)?por\s+\$([\d.,]+)(?:\s+de\s+([^.]+))?/i
+      /(?:recibi(?:ste|ó)|abono|consignaci[oó]n)\s+(?:de\s+)?(?:una\s+)?(?:transferencia\s+)?por\s+\$([\d.,]+)(?:\s+de\s+([^,.\n]+?))?(?:\s+en\s+tu|\s+a\s+tu|,|\.|$)/i
     );
     if (transRecibidaMatch) {
       const amount = parseAmount(`$${transRecibidaMatch[1]}`);

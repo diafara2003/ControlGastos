@@ -135,6 +135,13 @@ export function DashboardPage() {
     load();
   }, [load]);
 
+  // Auto-refresh when new transactions are synced
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener("transactions-updated", handler);
+    return () => window.removeEventListener("transactions-updated", handler);
+  }, [load]);
+
   const monthName = getMonthName(selectedDate);
   const year = selectedDate.getFullYear();
   const showYear = year !== new Date().getFullYear();

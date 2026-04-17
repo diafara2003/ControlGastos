@@ -134,7 +134,14 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
       );
 
       // 3. Parse emails
+      for (const email of newEmails) {
+        console.log(`Parsing email: from=${email.from.slice(0, 30)} subj=${email.subject.slice(0, 40)} body=${email.bodyText.slice(0, 200)}`);
+      }
       const parseResults = parseEmails(newEmails);
+
+      for (const r of parseResults) {
+        console.log(`Parse result: method=${r.method} parsed=${!!r.parsed} ${r.parsed ? `amount=${r.parsed.amount} merchant=${r.parsed.merchant}` : 'FAILED'}`);
+      }
 
       // 4. AI fallback for failed parses
       for (const result of parseResults) {
@@ -162,42 +169,42 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         if (!result.parsed) continue;
 
         try {
-          const classification = await classifyTransaction(
-            result.parsed,
-            account.user_id
-          );
+          console.log(`Classifying: ${result.parsed.merchant.slice(0, 30)} $${result.parsed.amount}`);
+          let classification;
+          try {
+            classification = await classifyTransaction(result.parsed, account.user_id);
+          } catch (classErr) {
+            console.error("Classification error, using fallback:", classErr);
+            classification = { categoryName: "Otros", method: "none" as const };
+          }
+          console.log(`Classified as: ${classification.categoryName} (${classification.method})`);
 
           const categoryId = categoryMap.get(classification.categoryName) ?? null;
 
-          const { error: insertError } = await supabase.from("transactions").upsert(
-            {
-              user_id: account.user_id,
-              email_account_id: account.id,
-              type: result.parsed.type,
-              amount: result.parsed.amount,
-              merchant: result.parsed.merchant,
-              description: result.parsed.description,
-              category_id: categoryId,
-              transaction_date: result.parsed.transactionDate.toISOString(),
-              classification_method:
-                classification.method === "none"
-                  ? null
-                  : classification.method,
-              email_message_id: result.email.messageId,
-              raw_email_snippet: result.email.snippet?.slice(0, 500),
-              card_last_four: result.parsed.cardLastFour,
-            },
-            { onConflict: "user_id,email_message_id", ignoreDuplicates: true }
-          );
+          const { error: insertError } = await supabase.from("transactions").insert({
+            user_id: account.user_id,
+            email_account_id: account.id,
+            type: result.parsed.type,
+            amount: result.parsed.amount,
+            merchant: result.parsed.merchant,
+            description: result.parsed.description,
+            category_id: categoryId,
+            transaction_date: result.parsed.transactionDate.toISOString(),
+            classification_method:
+              classification.method === "none"
+                ? null
+                : classification.method,
+            email_message_id: result.email.messageId,
+            raw_email_snippet: result.email.snippet?.slice(0, 500),
+            card_last_four: result.parsed.cardLastFour,
+          });
 
           if (insertError) {
-            // Skip duplicates silently
-            if (!insertError.message.includes("duplicate")) {
-              throw insertError;
-            }
+            console.error(`Insert error: ${insertError.message}`);
             continue;
           }
 
+          console.log(`Transaction saved: ${result.parsed.type} $${result.parsed.amount} ${result.parsed.merchant.slice(0, 20)}`);
           logEntry.created++;
         } catch (err) {
           logEntry.errors.push(

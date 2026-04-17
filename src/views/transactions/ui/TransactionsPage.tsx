@@ -67,6 +67,13 @@ export function TransactionsPage() {
     return () => clearTimeout(timer);
   }, [loadData, searchQuery]);
 
+  // Auto-refresh when new transactions are synced
+  useEffect(() => {
+    const handler = () => loadData();
+    window.addEventListener("transactions-updated", handler);
+    return () => window.removeEventListener("transactions-updated", handler);
+  }, [loadData]);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">

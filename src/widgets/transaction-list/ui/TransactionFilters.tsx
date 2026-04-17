@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CreditCard, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { cn } from "@/src/shared/lib/cn";
 import type { Category } from "@/src/entities/category";
 
@@ -137,7 +138,7 @@ export function TransactionFilters({
                 onCategoryChange(selectedCategory === cat.id ? null : cat.id)
               }
             >
-              {cat.icon} {cat.name}
+              <LucideIcon name={cat.icon} size={12} /> {cat.name}
             </Chip>
           ))}
         </div>
