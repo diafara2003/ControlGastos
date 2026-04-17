@@ -14,5 +14,28 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  // If no code, the token might be in the hash fragment.
+  // Serve a page that extracts it client-side and redirects.
+  const html = `
+    <!DOCTYPE html>
+    <html>
+      <head><meta charset="utf-8"><title>Autenticando...</title></head>
+      <body>
+        <p>Autenticando...</p>
+        <script>
+          const hash = window.location.hash;
+          if (hash && hash.includes('access_token')) {
+            // Supabase client-side will pick up the hash automatically
+            window.location.href = '/dashboard';
+          } else {
+            window.location.href = '/login?error=auth';
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  return new NextResponse(html, {
+    headers: { "Content-Type": "text/html" },
+  });
 }
