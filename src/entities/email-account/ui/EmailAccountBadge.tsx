@@ -4,6 +4,7 @@ import type { EmailProvider } from "../model/types";
 const providerConfig: Record<EmailProvider, { label: string; color: string }> = {
   gmail: { label: "Gmail", color: "text-red-600" },
   outlook: { label: "Outlook", color: "text-blue-600" },
+  other: { label: "Correo", color: "text-gray-600" },
 };
 
 interface EmailAccountBadgeProps {

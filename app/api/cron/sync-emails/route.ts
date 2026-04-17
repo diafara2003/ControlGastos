@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
-import { fetchGmailEmails } from "@/src/features/sync-emails/lib/gmail";
-import { fetchOutlookEmails } from "@/src/features/sync-emails/lib/outlook";
+import { fetchImapEmails } from "@/src/features/sync-emails/lib/imap";
 import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { parseWithAI } from "@/src/features/sync-emails/lib/ai-parser";
 import { classifyTransaction } from "@/src/features/classify-transaction";
@@ -85,11 +84,8 @@ async function syncAllAccounts(filterUserId?: string) {
       .single();
 
     try {
-      // 1. Fetch emails based on provider
-      const emails =
-        account.provider === "gmail"
-          ? await fetchGmailEmails(account)
-          : await fetchOutlookEmails(account);
+      // 1. Fetch emails via IMAP
+      const emails = await fetchImapEmails(account);
 
       logEntry.processed = emails.length;
 

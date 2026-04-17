@@ -1,2 +1,2 @@
-export { ConnectEmailButton } from "./ui/ConnectEmailButton";
+export { ConnectEmailForm } from "./ui/ConnectEmailForm";
 export { EmailAccountCard } from "./ui/EmailAccountCard";

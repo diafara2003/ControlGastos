@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/src/shared/ui/card";
 import { Button } from "@/src/shared/ui/button";
 import { Badge } from "@/src/shared/ui/badge";
-import { ConnectEmailButton } from "@/src/features/connect-email";
+import { ConnectEmailForm } from "@/src/features/connect-email";
 import { useAuth } from "@/src/features/auth";
 import { createClient } from "@/src/shared/api/supabase/client";
 import type { EmailAccount } from "@/src/entities/email-account";
@@ -44,11 +44,19 @@ function ThemeToggle() {
   );
 }
 
+interface UserInfo {
+  email: string;
+  name: string | null;
+  avatarUrl: string | null;
+}
+
 export function SettingsPage() {
   const { signOut, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [emailAccounts, setEmailAccounts] = useState<EmailAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [showConnectForm, setShowConnectForm] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
   const [toast, setToast] = useState<{
@@ -58,6 +66,17 @@ export function SettingsPage() {
 
   const loadAccounts = useCallback(async () => {
     const supabase = createClient();
+
+    // Load user info
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (authUser) {
+      setUser({
+        email: authUser.email ?? "",
+        name: authUser.user_metadata?.full_name ?? authUser.user_metadata?.name ?? null,
+        avatarUrl: authUser.user_metadata?.avatar_url ?? authUser.user_metadata?.picture ?? null,
+      });
+    }
+
     const { data } = await supabase
       .from("email_accounts")
       .select("*")
@@ -123,6 +142,32 @@ export function SettingsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-bold text-gray-900">Ajustes</h1>
+
+      {/* User profile card */}
+      {user && (
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.name ?? "Avatar"}
+                className="h-12 w-12 rounded-full object-cover"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-lg font-bold text-emerald-700">
+                {(user.name ?? user.email)[0]?.toUpperCase()}
+              </div>
+            )}
+            <div className="min-w-0">
+              {user.name && (
+                <p className="font-semibold text-gray-900 truncate">{user.name}</p>
+              )}
+              <p className="text-sm text-gray-500 truncate">{user.email}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Toast notification */}
       {toast && (
@@ -211,14 +256,25 @@ export function SettingsPage() {
                 </div>
               )}
 
-              <div className="flex gap-2 pt-2">
-                <ConnectEmailButton provider="gmail" />
-                <ConnectEmailButton provider="outlook" />
+              <div className="pt-2">
+                <Button onClick={() => setShowConnectForm(true)} className="w-full">
+                  <Mail className="h-4 w-4" />
+                  Conectar correo
+                </Button>
               </div>
             </>
           )}
         </CardContent>
       </Card>
+
+      <ConnectEmailForm
+        open={showConnectForm}
+        onOpenChange={setShowConnectForm}
+        onConnected={() => {
+          loadAccounts();
+          setToast({ type: "success", message: "Correo conectado correctamente" });
+        }}
+      />
 
       {/* Manual sync */}
       {emailAccounts.length > 0 && (
