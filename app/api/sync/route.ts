@@ -4,7 +4,7 @@ export const maxDuration = 60;
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/shared/api/supabase/server";
 
-export async function POST() {
+export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -13,6 +13,9 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { searchParams } = new URL(request.url);
+  const maxEmails = parseInt(searchParams.get("maxEmails") ?? "20", 10);
 
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -24,7 +27,7 @@ export async function POST() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.CRON_SECRET}`,
       },
-      body: JSON.stringify({ userId: user.id }),
+      body: JSON.stringify({ userId: user.id, maxEmails }),
     });
 
     const text = await res.text();

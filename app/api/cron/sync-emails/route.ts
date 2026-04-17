@@ -32,11 +32,12 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const userId = body.userId as string | undefined;
+  const maxEmails = (body.maxEmails as number) ?? 20;
 
-  return syncAllAccounts(userId);
+  return syncAllAccounts(userId, maxEmails);
 }
 
-async function syncAllAccounts(filterUserId?: string) {
+async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
   const supabase = createServiceClient();
   const results: {
     accountId: string;
@@ -91,7 +92,7 @@ async function syncAllAccounts(filterUserId?: string) {
       let emails;
       if (account.imap_host && account.imap_password_encrypted) {
         // Has IMAP credentials (Gmail, etc.)
-        emails = await fetchImapEmails(account);
+        emails = await fetchImapEmails(account, maxEmails);
       } else if (account.provider === "outlook") {
         // Outlook via Graph API — get token from user's auth session
         const { data: { session } } = await supabase.auth.admin.getUserById(account.user_id)
@@ -104,7 +105,7 @@ async function syncAllAccounts(filterUserId?: string) {
           results.push(logEntry);
           continue;
         }
-        emails = await fetchOutlookGraphEmails(providerToken, account.last_sync_at);
+        emails = await fetchOutlookGraphEmails(providerToken, account.last_sync_at, maxEmails);
       } else {
         logEntry.errors.push("No IMAP credentials configured");
         results.push(logEntry);

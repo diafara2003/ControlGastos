@@ -3,12 +3,13 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
 
-const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const QUICK_INTERVAL = 5 * 1000; // 5 seconds for quick checks
 
 export function AutoSync() {
   const syncingRef = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const registeredRef = useRef(false);
+  const initialDoneRef = useRef(false);
 
   const registerOutlookIfNeeded = useCallback(async () => {
     if (registeredRef.current) return;
@@ -18,14 +19,12 @@ export function AutoSync() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
-    // Check if user logged in with Azure and has provider_token
     const provider = session.user.app_metadata?.provider;
     if (provider !== "azure" || !session.provider_token) return;
 
     const userEmail = session.user.email;
     if (!userEmail) return;
 
-    // Check if already registered
     const { data: existing } = await supabase
       .from("email_accounts")
       .select("id")
@@ -34,7 +33,6 @@ export function AutoSync() {
 
     if (existing && existing.length > 0) return;
 
-    // Auto-register Outlook account
     await supabase.from("email_accounts").insert({
       user_id: session.user.id,
       provider: "outlook",
@@ -43,7 +41,7 @@ export function AutoSync() {
     });
   }, []);
 
-  const sync = useCallback(async () => {
+  const sync = useCallback(async (maxEmails: number) => {
     if (syncingRef.current) return;
 
     const supabase = createClient();
@@ -60,7 +58,7 @@ export function AutoSync() {
 
     syncingRef.current = true;
     try {
-      await fetch("/api/sync", { method: "POST" });
+      await fetch(`/api/sync?maxEmails=${maxEmails}`, { method: "POST" });
     } catch {
       // Silently fail
     } finally {
@@ -69,14 +67,20 @@ export function AutoSync() {
   }, []);
 
   useEffect(() => {
-    // Auto-register Outlook if user logged in with Microsoft
     registerOutlookIfNeeded();
 
-    // Sync once on mount
-    const initialSync = setTimeout(sync, 3000);
+    // Initial sync: last 20 emails after 2 seconds
+    const initialSync = setTimeout(async () => {
+      await sync(20);
+      initialDoneRef.current = true;
+    }, 2000);
 
-    // Then sync every 5 minutes
-    intervalRef.current = setInterval(sync, SYNC_INTERVAL);
+    // Quick sync every 5 seconds: last 2 emails
+    intervalRef.current = setInterval(() => {
+      if (initialDoneRef.current) {
+        sync(2);
+      }
+    }, QUICK_INTERVAL);
 
     return () => {
       clearTimeout(initialSync);
