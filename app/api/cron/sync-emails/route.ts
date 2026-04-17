@@ -1,3 +1,5 @@
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import { fetchImapEmails } from "@/src/features/sync-emails/lib/imap";

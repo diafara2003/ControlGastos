@@ -29,6 +29,8 @@ export async function validateImapConnection(
     secure: true,
     auth: { user: email, pass: password },
     logger: false,
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 10000,
   });
 
   try {
@@ -40,7 +42,13 @@ export async function validateImapConnection(
     if (msg.includes("AUTHENTICATIONFAILED") || msg.includes("Invalid credentials")) {
       return { success: false, error: "Credenciales incorrectas. Si usas Gmail, necesitas una contraseña de aplicación." };
     }
+    if (msg.includes("ECONNRESET") || msg.includes("ETIMEDOUT")) {
+      return { success: false, error: "No se pudo conectar al servidor de correo. Verifica tu conexión a internet." };
+    }
+    console.error("IMAP connection error:", err);
     return { success: false, error: `Error de conexión: ${msg}` };
+  } finally {
+    try { client.close(); } catch { /* ignore */ }
   }
 }
 
