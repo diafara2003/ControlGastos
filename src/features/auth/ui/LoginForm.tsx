@@ -30,6 +30,7 @@ export function LoginForm() {
       provider,
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
+        scopes: provider === "azure" ? "openid email profile User.Read" : undefined,
       },
     });
   };
