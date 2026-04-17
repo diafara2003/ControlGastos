@@ -1,0 +1,15 @@
+export const DEFAULT_CATEGORIES = [
+  { name: "Suscripciones", icon: "🔄", color: "#8B5CF6" },
+  { name: "Compras online", icon: "🛒", color: "#F59E0B" },
+  { name: "Supermercado", icon: "🏪", color: "#10B981" },
+  { name: "Restaurantes", icon: "🍽️", color: "#EF4444" },
+  { name: "Transporte", icon: "🚗", color: "#3B82F6" },
+  { name: "Servicios públicos", icon: "💡", color: "#6366F1" },
+  { name: "Transferencias", icon: "💸", color: "#EC4899" },
+  { name: "Salud", icon: "🏥", color: "#14B8A6" },
+  { name: "Entretenimiento", icon: "🎮", color: "#F97316" },
+  { name: "Educación", icon: "📚", color: "#06B6D4" },
+  { name: "Efectivo", icon: "💵", color: "#84CC16" },
+  { name: "Ingresos", icon: "💰", color: "#22C55E" },
+  { name: "Otros", icon: "📦", color: "#9CA3AF" },
+] as const;
