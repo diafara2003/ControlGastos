@@ -65,7 +65,16 @@ export function BankAccountSetup() {
             else if (snippet.includes("davivienda")) bankName = "davivienda";
             else if (snippet.includes("bbva")) bankName = "bbva";
             else if (snippet.includes("nequi")) bankName = "nequi";
-            else if (snippet.includes("nu ") || snippet.includes("nu.com")) bankName = "nu";
+            else if (snippet.includes("nubank") || snippet.includes("nu.com") || snippet.includes("soynu")) bankName = "nu";
+            else if (snippet.includes("scotiabank") || snippet.includes("colpatria")) bankName = "scotiabank";
+            else if (snippet.includes("bogota") || snippet.includes("bogotá")) bankName = "bancodebogota";
+            else if (snippet.includes("occidente")) bankName = "bancodeoccidente";
+            else if (snippet.includes("popular")) bankName = "bancopopular";
+            else if (snippet.includes("falabella")) bankName = "bancofalabella";
+            else if (snippet.includes("avvillas") || snippet.includes("av villas")) bankName = "avvillas";
+            else if (snippet.includes("addi")) bankName = "addi";
+            else if (snippet.includes("rappipay") || snippet.includes("rappi")) bankName = "rappipay";
+            else if (snippet.includes("daviplata")) bankName = "daviplata";
             newCards.set(t.card_last_four, bankName);
           }
         }
