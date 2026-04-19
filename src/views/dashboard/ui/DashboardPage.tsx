@@ -93,6 +93,7 @@ export function DashboardPage() {
 
       // Filter by account selection
       const filtered = filterByAccount(txns, selectedAccount, accounts);
+      const filteredHistory = filterByAccount(history, selectedAccount, accounts);
       const income = filtered
         .filter((t) => t.type === "income")
         .reduce((sum, t) => sum + t.amount, 0);
@@ -120,7 +121,7 @@ export function DashboardPage() {
         59
       );
 
-      const lastMonthExpenses = history
+      const lastMonthExpenses = filteredHistory
         .filter(
           (t) =>
             t.type === "expense" &&
@@ -131,7 +132,7 @@ export function DashboardPage() {
       setLastMonthSameDay(lastMonthExpenses);
 
       // Category alerts
-      const historicalExpenses = history.filter((t) => t.type === "expense");
+      const historicalExpenses = filteredHistory.filter((t) => t.type === "expense");
       setHasHistory(historicalExpenses.length > 0);
 
       // Historical avg per category across HISTORY_MONTHS

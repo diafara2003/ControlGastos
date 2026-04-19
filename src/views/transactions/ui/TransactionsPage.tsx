@@ -98,14 +98,14 @@ export function TransactionsPage() {
 
   const pendingWithdrawals = useMemo(
     () =>
-      transactions.filter(
+      filteredTransactions.filter(
         (t) =>
           !t.withdrawal_resolved &&
           (t.category?.name === "Retiro cajero" ||
             t.category?.name === "Efectivo" ||
             /cajero|retiro|atm|servibanca/i.test(t.merchant))
       ),
-    [transactions]
+    [filteredTransactions]
   );
 
   return (

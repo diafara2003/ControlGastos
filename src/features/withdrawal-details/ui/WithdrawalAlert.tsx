@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/src/shared/api/supabase/client";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { Banknote, ChevronRight } from "lucide-react";
+import { getUntrackedCards, isUntracked } from "@/src/shared/lib/untracked-cards";
 
 export function WithdrawalAlert() {
   const [count, setCount] = useState(0);
@@ -24,10 +25,12 @@ export function WithdrawalAlert() {
         .in("name", ["Retiro cajero", "Efectivo"]);
       const catIds = retiroCat?.map((c) => c.id) ?? [];
 
+      const untrackedCards = await getUntrackedCards(user.id);
+
       const { data: byCat } = catIds.length > 0
         ? await supabase
             .from("transactions")
-            .select("id, amount")
+            .select("id, amount, card_last_four")
             .eq("user_id", user.id)
             .eq("type", "expense")
             .eq("withdrawal_resolved", false)
@@ -36,7 +39,7 @@ export function WithdrawalAlert() {
 
       const { data: byMerchant } = await supabase
         .from("transactions")
-        .select("id, amount")
+        .select("id, amount, card_last_four")
         .eq("user_id", user.id)
         .eq("type", "expense")
         .eq("withdrawal_resolved", false)
@@ -46,6 +49,7 @@ export function WithdrawalAlert() {
       const all = [...(byCat ?? []), ...(byMerchant ?? [])].filter((w) => {
         if (seen.has(w.id)) return false;
         seen.add(w.id);
+        if (isUntracked(w.card_last_four, untrackedCards)) return false;
         return true;
       });
 

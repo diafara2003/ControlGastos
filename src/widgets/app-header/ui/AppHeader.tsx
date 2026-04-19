@@ -8,6 +8,7 @@ import { APP_NAME } from "@/src/shared/config/constants";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { formatShortDate } from "@/src/shared/lib/date";
 import { LogOut, User, Bell, Banknote, PiggyBank } from "lucide-react";
+import { getUntrackedCards, isUntracked } from "@/src/shared/lib/untracked-cards";
 
 interface Notification {
   id: string;
@@ -61,11 +62,12 @@ export function AppHeader() {
         .in("name", ["Retiro cajero", "Efectivo"]);
 
       const retiroCatIds = retiroCat?.map((c) => c.id) ?? [];
+      const untrackedCards = await getUntrackedCards(u.id);
 
       const { data: wByCat } = retiroCatIds.length > 0
         ? await supabase
             .from("transactions")
-            .select("id, amount, merchant, transaction_date")
+            .select("id, amount, merchant, transaction_date, card_last_four")
             .eq("user_id", u.id)
             .eq("type", "expense")
             .eq("withdrawal_resolved", false)
@@ -76,7 +78,7 @@ export function AppHeader() {
 
       const { data: wByMerchant } = await supabase
         .from("transactions")
-        .select("id, amount, merchant, transaction_date")
+        .select("id, amount, merchant, transaction_date, card_last_four")
         .eq("user_id", u.id)
         .eq("type", "expense")
         .eq("withdrawal_resolved", false)
@@ -88,6 +90,7 @@ export function AppHeader() {
       for (const w of [...(wByCat ?? []), ...(wByMerchant ?? [])]) {
         if (seen.has(w.id)) continue;
         seen.add(w.id);
+        if (isUntracked(w.card_last_four, untrackedCards)) continue;
         notifs.push({
           id: `w-${w.id}`,
           type: "withdrawal",

@@ -10,6 +10,7 @@ import { cn } from "@/src/shared/lib/cn";
 import { APP_NAME } from "@/src/shared/config/constants";
 import { useAuth } from "@/src/features/auth";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { getUntrackedCards, isUntracked } from "@/src/shared/lib/untracked-cards";
 
 const navItems = [
   { href: "/dashboard", label: "Inicio", icon: LayoutDashboard },
@@ -68,13 +69,13 @@ export function Sidebar() {
             .in("name", ["Retiro cajero", "Efectivo"]);
 
           const retiroCatIds = retiroCat?.map((c) => c.id) ?? [];
-          console.log("[Sidebar notifs] user:", u.id, "retiroCatIds:", retiroCatIds);
+          const untrackedCards = await getUntrackedCards(u.id);
 
           // Find unresolved withdrawals by category OR merchant keywords
           const { data: byCategory } = retiroCatIds.length > 0
             ? await supabase
                 .from("transactions")
-                .select("id, amount, merchant, transaction_date")
+                .select("id, amount, merchant, transaction_date, card_last_four")
                 .eq("user_id", u.id)
                 .eq("type", "expense")
                 .eq("withdrawal_resolved", false)
@@ -85,7 +86,7 @@ export function Sidebar() {
 
           const { data: byMerchant } = await supabase
             .from("transactions")
-            .select("id, amount, merchant, transaction_date")
+            .select("id, amount, merchant, transaction_date, card_last_four")
             .eq("user_id", u.id)
             .eq("type", "expense")
             .eq("withdrawal_resolved", false)
@@ -93,12 +94,12 @@ export function Sidebar() {
             .order("transaction_date", { ascending: false })
             .limit(5);
 
-          console.log("[Sidebar notifs] byCategory:", byCategory?.length, "byMerchant:", byMerchant?.length);
-          // Merge and deduplicate
+          // Merge, deduplicate, and exclude untracked accounts
           const seen = new Set<string>();
           const allWithdrawals = [...(byCategory ?? []), ...(byMerchant ?? [])].filter((w) => {
             if (seen.has(w.id)) return false;
             seen.add(w.id);
+            if (isUntracked(w.card_last_four, untrackedCards)) return false;
             return true;
           });
 
