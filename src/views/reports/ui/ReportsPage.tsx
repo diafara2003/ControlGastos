@@ -16,6 +16,7 @@ import {
   PiggyBank,
   Receipt,
 } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { getTransactions } from "@/src/entities/transaction";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName, formatShortDate } from "@/src/shared/lib/date";
@@ -386,9 +387,16 @@ export function ReportsPage() {
                       <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-500">
                         {i + 1}
                       </span>
-                      {t.category?.icon && (
-                        <span className="text-base">{t.category.icon}</span>
-                      )}
+                      <div
+                        className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
+                        style={{ backgroundColor: `${t.category?.color ?? "#9ca3af"}15` }}
+                      >
+                        <LucideIcon
+                          name={t.category?.icon ?? "package"}
+                          size={14}
+                          color={t.category?.color ?? "#9ca3af"}
+                        />
+                      </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-800 truncate">
                           {t.merchant}
@@ -425,7 +433,12 @@ export function ReportsPage() {
                     <div key={cat.name}>
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-base">{cat.icon}</span>
+                          <div
+                            className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
+                            style={{ backgroundColor: `${cat.color}15` }}
+                          >
+                            <LucideIcon name={cat.icon} size={14} color={cat.color} />
+                          </div>
                           <span className="text-sm text-gray-700 truncate">
                             {cat.name}
                           </span>

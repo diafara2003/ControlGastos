@@ -31,6 +31,8 @@ const TRANSACTION_KEYWORDS = [
   "débito automático", "debito automatico",
   "nómina", "nomina", "consignación", "consignacion",
   "tu cuenta *", "t.deb *", "t.cred *", "tarjeta *",
+  "extracto", "total a pagar", "saldo a pagar", "valor de tu cuota",
+  "pago mínimo", "pago minimo", "fecha de corte",
 ];
 
 async function refreshMicrosoftToken(

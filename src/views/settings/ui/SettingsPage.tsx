@@ -24,7 +24,9 @@ import {
   AlertCircle,
   Moon,
   Download,
+  CreditCard,
 } from "lucide-react";
+import { CreditCardSetupModal } from "@/src/features/credit-card-setup";
 
 function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -63,6 +65,8 @@ export function SettingsPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [userCards, setUserCards] = useState<{ bank_name: string; product_type: string }[]>([]);
+  const [showCardModal, setShowCardModal] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     const supabase = createClient();
@@ -77,11 +81,18 @@ export function SettingsPage() {
       });
     }
 
-    const { data } = await supabase
-      .from("email_accounts")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const [{ data }, { data: cards }] = await Promise.all([
+      supabase
+        .from("email_accounts")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("user_credit_cards")
+        .select("bank_name, product_type")
+        .order("bank_name"),
+    ]);
     if (data) setEmailAccounts(data as EmailAccount[]);
+    if (cards) setUserCards(cards);
     setLoadingAccounts(false);
   }, []);
 
@@ -273,6 +284,48 @@ export function SettingsPage() {
         onConnected={() => {
           loadAccounts();
           setToast({ type: "success", message: "Correo conectado correctamente" });
+        }}
+      />
+
+      {/* Credit cards */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5" />
+            Tarjetas de crédito
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {userCards.length === 0 ? (
+            <p className="text-sm text-gray-500 py-1">
+              No has configurado tarjetas de crédito.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {userCards.map((card) => (
+                <Badge key={card.bank_name} variant="secondary" className="text-xs">
+                  {card.bank_name}
+                  {card.product_type === "bnpl" && " (BNPL)"}
+                </Badge>
+              ))}
+            </div>
+          )}
+          <Button
+            variant="outline"
+            onClick={() => setShowCardModal(true)}
+            className="w-full"
+          >
+            <CreditCard className="h-4 w-4" />
+            {userCards.length > 0 ? "Editar tarjetas" : "Agregar tarjetas"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <CreditCardSetupModal
+        open={showCardModal}
+        onComplete={() => {
+          setShowCardModal(false);
+          loadAccounts();
         }}
       />
 
