@@ -2,6 +2,7 @@ export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
+import { generateEmbedding } from "@/src/shared/api/embeddings";
 
 /**
  * POST /api/learn-pattern
@@ -57,6 +58,40 @@ export async function POST(request: Request) {
         corrections_count: 1,
         confidence: 0.5,
       });
+    }
+
+    // Also store embedding for RAG-based semantic matching
+    try {
+      const embeddingText = `${pattern} ${categoryName}`;
+      const embedding = await generateEmbedding(embeddingText);
+
+      const { data: existingEmb } = await supabase
+        .from("merchant_embeddings")
+        .select("id, corrections_count")
+        .eq("merchant_text", pattern)
+        .eq("category_name", categoryName)
+        .single();
+
+      if (existingEmb) {
+        await supabase
+          .from("merchant_embeddings")
+          .update({
+            corrections_count: existingEmb.corrections_count + 1,
+            embedding: JSON.stringify(embedding),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingEmb.id);
+      } else {
+        await supabase.from("merchant_embeddings").insert({
+          merchant_text: pattern,
+          category_name: categoryName,
+          embedding: JSON.stringify(embedding),
+          corrections_count: 1,
+        });
+      }
+    } catch (embErr) {
+      // Embedding storage is best-effort, don't fail the request
+      console.error("Embedding storage failed:", embErr);
     }
 
     return NextResponse.json({ learned: true, pattern, categoryName });

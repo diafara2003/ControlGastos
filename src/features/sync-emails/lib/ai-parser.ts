@@ -1,4 +1,5 @@
 import { chatCompletion } from "@/src/shared/api/azure-openai";
+import { generateEmbedding } from "@/src/shared/api/embeddings";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import type { FetchedEmail } from "./gmail";
 import type { ParsedTransaction } from "./patterns";
@@ -71,29 +72,55 @@ export interface AIParseResult extends ParsedTransaction {
 
 /**
  * Check if a merchant matches a learned classification pattern.
- * Returns the category name with highest confidence, or null.
+ * 1. First tries exact text matching (fast, no API call)
+ * 2. Falls back to semantic search via embeddings (RAG)
+ * Returns the category name or null.
  */
-async function matchPattern(merchant: string): Promise<string | null> {
+async function matchPattern(merchant: string): Promise<{ category: string; method: "pattern" } | null> {
   try {
     const normalized = merchant.toLowerCase().trim();
     if (normalized.length < 3) return null;
 
     const supabase = createServiceClient();
+
+    // Step 1: Exact text match
     const { data } = await supabase
       .from("classification_patterns")
       .select("merchant_pattern, category_name, confidence")
       .gte("confidence", 0.5)
       .order("confidence", { ascending: false });
 
-    if (!data || data.length === 0) return null;
-
-    for (const p of data) {
-      if (
-        normalized.includes(p.merchant_pattern) ||
-        p.merchant_pattern.includes(normalized)
-      ) {
-        return p.category_name;
+    if (data) {
+      for (const p of data) {
+        if (
+          normalized.includes(p.merchant_pattern) ||
+          p.merchant_pattern.includes(normalized)
+        ) {
+          console.log(`Pattern match (text): "${normalized}" → ${p.category_name}`);
+          return { category: p.category_name, method: "pattern" };
+        }
       }
+    }
+
+    // Step 2: Semantic search via embeddings (RAG)
+    try {
+      const embedding = await generateEmbedding(normalized);
+      const { data: matches } = await supabase.rpc("match_merchant_embedding", {
+        query_embedding: JSON.stringify(embedding),
+        match_threshold: 0.78,
+        match_count: 1,
+      });
+
+      if (matches && matches.length > 0) {
+        const best = matches[0];
+        console.log(
+          `Pattern match (RAG): "${normalized}" ≈ "${best.merchant_text}" → ${best.category_name} (${(best.similarity * 100).toFixed(1)}%)`
+        );
+        return { category: best.category_name, method: "pattern" };
+      }
+    } catch (ragErr) {
+      // RAG is best-effort; if embeddings aren't set up yet, skip silently
+      console.log("RAG search skipped:", ragErr instanceof Error ? ragErr.message : ragErr);
     }
 
     return null;
@@ -137,12 +164,12 @@ ${email.bodyText.slice(0, 2000)}`;
     let categoryName = parsed.categoryName || "Otros";
     let classificationMethod: "ai" | "pattern" = "ai";
 
-    // If AI classified as "Otros", check learned patterns
+    // If AI classified as "Otros", check learned patterns (text + RAG)
     if (categoryName === "Otros") {
-      const patternMatch = await matchPattern(parsed.merchant);
-      if (patternMatch) {
-        categoryName = patternMatch;
-        classificationMethod = "pattern";
+      const match = await matchPattern(parsed.merchant);
+      if (match) {
+        categoryName = match.category;
+        classificationMethod = match.method;
       }
     }
 
