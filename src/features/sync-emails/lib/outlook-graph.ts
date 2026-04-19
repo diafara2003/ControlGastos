@@ -9,7 +9,7 @@ const FINANCIAL_KEYWORDS = [
   "bancodeoccidente", "bancocajasocial", "itau", "gnb sudameris",
   "citibank", "pichincha", "falabella", "finandina", "serfinanza",
   "bancoomeva", "bancamia", "lulo bank", "nu.com", "nubank",
-  "rappipay", "daviplata", "movii", "dale", "ualá",
+  "rappipay", "daviplata", "movii", "dale", "ualá", "addi",
   // Palabras clave de transacciones
   "compra", "compraste", "pagaste", "pago", "retiro", "retiraste",
   "transferencia", "transferiste", "te enviaron", "recibiste",

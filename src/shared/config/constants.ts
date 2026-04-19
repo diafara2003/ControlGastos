@@ -14,6 +14,7 @@ export const FINANCIAL_SENDERS = [
   "notificaciones@avvillas.com.co",
   "alertas@bbva.com.co",
   "notificaciones@scotiabank.com.co",
+  "addi.com",
 ] as const;
 
 export const ROUTES = {
