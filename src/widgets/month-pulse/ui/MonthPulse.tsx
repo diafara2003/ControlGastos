@@ -70,6 +70,18 @@ export function MonthPulse({
         )}
       </div>
 
+      {totalIncome > 0 && (
+        <div className="mt-3 flex items-center gap-2">
+          <div className="h-5 w-0.5 rounded-full bg-emerald-400" />
+          <p className="text-xs text-gray-500">
+            Has recibido{" "}
+            <span className="font-semibold text-emerald-600">
+              {formatCOP(totalIncome)}
+            </span>
+          </p>
+        </div>
+      )}
+
       {comparisonLabel && isCurrentMonth && (
         <div
           className={`mt-3 inline-flex items-center gap-1.5 text-xs font-medium ${
