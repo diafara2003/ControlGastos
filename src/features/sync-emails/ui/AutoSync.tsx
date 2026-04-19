@@ -3,13 +3,13 @@
 import { useEffect, useRef, useCallback } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
 
-const QUICK_INTERVAL = 5 * 1000;
-
 export function AutoSync() {
   const syncingRef = useRef(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const registeredRef = useRef(false);
-  const initialDoneRef = useRef(false);
+  const lastSyncRef = useRef<number>(0);
+
+  // Minimum 2 minutes between syncs to avoid spamming
+  const MIN_SYNC_INTERVAL = 2 * 60 * 1000;
 
   const refreshAndStoreToken = useCallback(async () => {
     const supabase = createClient();
@@ -54,6 +54,10 @@ export function AutoSync() {
   const sync = useCallback(async (maxEmails: number) => {
     if (syncingRef.current) return;
 
+    // Respect minimum interval between syncs
+    const now = Date.now();
+    if (now - lastSyncRef.current < MIN_SYNC_INTERVAL) return;
+
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -69,10 +73,10 @@ export function AutoSync() {
     if (!accounts || accounts.length === 0) return;
 
     syncingRef.current = true;
+    lastSyncRef.current = now;
     try {
       const res = await fetch(`/api/sync?maxEmails=${maxEmails}`, { method: "POST" });
       const data = await res.json().catch(() => null);
-      // If new transactions were created, notify the app to refresh
       if (data?.results?.some((r: { created?: number }) => (r.created ?? 0) > 0)) {
         window.dispatchEvent(new CustomEvent("transactions-updated"));
       }
@@ -81,23 +85,23 @@ export function AutoSync() {
     } finally {
       syncingRef.current = false;
     }
-  }, [refreshAndStoreToken]);
+  }, [refreshAndStoreToken, MIN_SYNC_INTERVAL]);
 
   useEffect(() => {
-    const initialSync = setTimeout(async () => {
-      await sync(20);
-      initialDoneRef.current = true;
-    }, 2000);
+    // Sync on app open (after 2s to let the UI load)
+    const initialSync = setTimeout(() => sync(20), 2000);
 
-    intervalRef.current = setInterval(() => {
-      if (initialDoneRef.current) {
-        sync(2);
+    // Sync when user returns to the app (tab/app becomes visible again)
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        sync(10);
       }
-    }, QUICK_INTERVAL);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
       clearTimeout(initialSync);
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [sync]);
 
