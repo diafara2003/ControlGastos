@@ -35,7 +35,13 @@ export function EditTransactionForm({
   const [merchant, setMerchant] = useState(transaction.merchant);
   const [notes, setNotes] = useState(transaction.notes ?? "");
   const [isVerified, setIsVerified] = useState(transaction.is_verified);
+  const [amount, setAmount] = useState(transaction.amount);
+  const [type, setType] = useState<"expense" | "income">(transaction.type as "expense" | "income");
+  const [transactionDate, setTransactionDate] = useState(
+    transaction.transaction_date.slice(0, 10)
+  );
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -48,6 +54,9 @@ export function EditTransactionForm({
         merchant,
         notes: notes || null,
         is_verified: isVerified,
+        amount,
+        type,
+        transaction_date: new Date(transactionDate + "T12:00:00").toISOString(),
         classification_method: "manual",
         updated_at: new Date().toISOString(),
       })
@@ -76,11 +85,33 @@ export function EditTransactionForm({
     setSaving(false);
   };
 
+  const handleDelete = async () => {
+    const confirmed = window.confirm(
+      "¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer."
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .eq("id", transaction.id);
+
+    if (!error) {
+      onSaved();
+      onOpenChange(false);
+    }
+
+    setDeleting(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar transacción</DialogTitle>
+          <DialogTitle>Editar transaccion</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -94,15 +125,53 @@ export function EditTransactionForm({
             />
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Monto
+              </label>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                Tipo
+              </label>
+              <Select
+                value={type}
+                onChange={(e) => setType(e.target.value as "expense" | "income")}
+              >
+                <option value="expense">Gasto</option>
+                <option value="income">Ingreso</option>
+              </Select>
+            </div>
+          </div>
+
           <div>
             <label className="text-sm font-medium text-gray-700">
-              Categoría
+              Fecha
+            </label>
+            <Input
+              type="date"
+              value={transactionDate}
+              onChange={(e) => setTransactionDate(e.target.value)}
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-gray-700">
+              Categoria
             </label>
             <Select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
             >
-              <option value="">Sin categoría</option>
+              <option value="">Sin categoria</option>
               {categories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.name}
@@ -110,7 +179,7 @@ export function EditTransactionForm({
               ))}
             </Select>
             <p className="mt-1 text-[10px] text-gray-400">
-              Cambiar la categoría crea una regla automática para futuras transacciones
+              Cambiar la categoria crea una regla automatica para futuras transacciones
             </p>
           </div>
 
@@ -145,11 +214,20 @@ export function EditTransactionForm({
             <Button
               className="flex-1"
               onClick={handleSave}
-              disabled={saving || !merchant.trim()}
+              disabled={saving || deleting || !merchant.trim()}
             >
               {saving ? <Spinner className="h-4 w-4" /> : "Guardar"}
             </Button>
           </div>
+
+          <Button
+            variant="outline"
+            className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
+            onClick={handleDelete}
+            disabled={deleting || saving}
+          >
+            {deleting ? <Spinner className="h-4 w-4" /> : "Eliminar"}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>

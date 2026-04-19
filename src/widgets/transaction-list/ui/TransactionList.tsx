@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { TransactionCard } from "@/src/entities/transaction";
 import type { Transaction } from "@/src/entities/transaction";
 import { Spinner } from "@/src/shared/ui/spinner";
@@ -62,6 +63,8 @@ export function TransactionList({
   loading,
   onTransactionClick,
 }: TransactionListProps) {
+  const [expandedDate, setExpandedDate] = useState<string | null>(null);
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -137,21 +140,31 @@ export function TransactionList({
             })()}
 
             {/* Date header with daily summary */}
-            <div className={`sticky top-[130px] md:top-[140px] z-10 px-3 py-1.5 flex items-center justify-between rounded-lg ${isWeekend ? "bg-purple-50 dark:bg-purple-900/10" : "bg-gray-50 dark:bg-slate-900"}`}>
-              <p className="text-xs font-medium text-gray-500 uppercase">
-                {d.toLocaleDateString("es-CO", {
-                  weekday: "long",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </p>
-              {(expenses > 0 || income > 0) && (
-                <span
-                  title={`Gastos: -${formatCOP(expenses)}${income > 0 ? ` · Ingresos: +${formatCOP(income)}` : ""}`}
-                  className={`text-xs font-semibold tabular-nums cursor-default ${income - expenses >= 0 ? "text-emerald-600" : "text-rose-500"}`}
-                >
-                  {income - expenses >= 0 ? "+" : ""}{formatCOP(income - expenses)}
-                </span>
+            <div className={`sticky top-[130px] md:top-[140px] z-10 px-3 py-1.5 rounded-lg ${isWeekend ? "bg-purple-50 dark:bg-purple-900/10" : "bg-gray-50 dark:bg-slate-900"}`}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-gray-500 uppercase">
+                  {d.toLocaleDateString("es-CO", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </p>
+                {(expenses > 0 || income > 0) && (
+                  <span
+                    onClick={() =>
+                      setExpandedDate(expandedDate === date ? null : date)
+                    }
+                    className={`text-xs font-semibold tabular-nums cursor-pointer select-none ${income - expenses >= 0 ? "text-emerald-600" : "text-rose-500"}`}
+                  >
+                    {income - expenses >= 0 ? "+" : ""}{formatCOP(income - expenses)}
+                  </span>
+                )}
+              </div>
+              {expandedDate === date && (expenses > 0 || income > 0) && (
+                <p className="text-[11px] text-gray-500 mt-0.5">
+                  Gastos: -{formatCOP(expenses)}
+                  {income > 0 ? ` · Ingresos: +${formatCOP(income)}` : ""}
+                </p>
               )}
             </div>
 

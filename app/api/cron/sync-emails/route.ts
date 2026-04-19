@@ -261,9 +261,30 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 async function sendTransactionNotifications(
   supabase: ReturnType<typeof createServiceClient>,
   userId: string,
-  parseResults: { parsed: { type: string; amount: number; merchant: string } | null }[]
+  parseResults: { parsed: { type: string; amount: number; merchant: string; description?: string | null } | null }[]
 ) {
   try {
+    // Payroll arrival notification
+    const PAYROLL_KEYWORDS = ["nómina", "nomina", "pago de nomina", "pago de nómina"];
+    for (const result of parseResults) {
+      if (
+        result.parsed &&
+        result.parsed.type === "income" &&
+        PAYROLL_KEYWORDS.some((kw) =>
+          `${result.parsed!.description ?? ""} ${result.parsed!.merchant}`
+            .toLowerCase()
+            .includes(kw)
+        )
+      ) {
+        await sendPushToUser(userId, {
+          title: "Tu nómina llegó",
+          body: `Recibiste ${formatCOP(result.parsed.amount)} — define tu meta de ahorro`,
+          tag: "payroll-arrived",
+          url: "/dashboard",
+        }).catch(() => {});
+      }
+    }
+
     const { data: profile } = await supabase
       .from("profiles")
       .select("notify_large_expense, notify_large_expense_threshold, notify_budget_alert")
