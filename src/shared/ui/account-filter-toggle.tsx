@@ -6,21 +6,29 @@ import { getBankBrand } from "@/src/shared/config/bank-brands";
 export function AccountFilterToggle() {
   const { selectedAccount, setSelectedAccount, accounts, hasMultipleAccounts } = useAccountFilter();
 
-  if (!hasMultipleAccounts) return null;
+  // Only show tracked accounts in the toggle
+  const trackedAccounts = accounts.filter((a) => a.is_tracked);
+
+  if (!hasMultipleAccounts || trackedAccounts.length < 1) return null;
+
+  // Only show toggle if there are 2+ tracked accounts
+  if (trackedAccounts.length < 2 && selectedAccount === "all") return null;
 
   return (
     <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-      <button
-        onClick={() => setSelectedAccount("all")}
-        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-          selectedAccount === "all"
-            ? "bg-gray-900 text-white"
-            : "bg-gray-100 text-gray-500"
-        }`}
-      >
-        Todas
-      </button>
-      {accounts.map((acc) => {
+      {trackedAccounts.length >= 2 && (
+        <button
+          onClick={() => setSelectedAccount("all")}
+          className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+            selectedAccount === "all"
+              ? "bg-gray-900 text-white"
+              : "bg-gray-100 text-gray-500"
+          }`}
+        >
+          Todas
+        </button>
+      )}
+      {trackedAccounts.map((acc) => {
         const brand = getBankBrand(acc.bank_name);
         const isActive = selectedAccount === acc.identifier;
         return (

@@ -24,6 +24,7 @@ interface BankAccount {
   track_income: boolean;
   label: string | null;
   txn_count?: number;
+  sameBankGroup?: string;
 }
 
 export function BankAccountSetup() {
@@ -103,18 +104,71 @@ export function BankAccountSetup() {
       const needsSetup = data.some((a) => !a.label);
       if (!needsSetup) return;
 
-      // Count transactions per account (by card_last_four since bank_account_id may not be linked yet)
-      const withCounts = await Promise.all(
+      // Analyze transactions per account to suggest type and label
+      const withAnalysis = await Promise.all(
         data.map(async (acc) => {
-          const { count } = await supabase
+          const { data: txns } = await supabase
             .from("transactions")
-            .select("id", { count: "exact", head: true })
-            .eq("card_last_four", acc.identifier);
-          return { ...acc, txn_count: count ?? 0 };
+            .select("raw_email_snippet, type, merchant")
+            .eq("card_last_four", acc.identifier)
+            .limit(10);
+
+          const count = txns?.length ?? 0;
+          let suggestedType = acc.account_type;
+          let suggestedLabel = acc.label;
+
+          if (txns && txns.length > 0 && !acc.label) {
+            const snippets = txns.map((t) => (t.raw_email_snippet ?? "").toLowerCase()).join(" ");
+            const merchants = txns.map((t) => t.merchant.toLowerCase()).join(" ");
+
+            // Detect account type from transaction patterns
+            if (snippets.includes("t.deb") || snippets.includes("tarjeta débito") || snippets.includes("tarjeta debito")) {
+              suggestedType = "savings";
+              suggestedLabel = "Tarjeta débito";
+            } else if (snippets.includes("cuenta") && (snippets.includes("transferi") || snippets.includes("recibi"))) {
+              suggestedType = "savings";
+              suggestedLabel = "Cuenta de ahorros";
+            } else if (snippets.includes("tarjeta de créd") || snippets.includes("tarjeta de cred") || merchants.includes("nu") || snippets.includes("extracto")) {
+              suggestedType = "credit";
+              suggestedLabel = "Tarjeta de crédito";
+            }
+
+            // Add bank brand to label
+            const brand = getBankBrand(acc.bank_name);
+            if (suggestedLabel && brand.name !== "Banco") {
+              suggestedLabel = `${suggestedLabel} ${brand.shortName}`;
+            }
+          }
+
+          return {
+            ...acc,
+            txn_count: count,
+            account_type: suggestedType,
+            label: suggestedLabel,
+          };
         })
       );
 
-      setAccounts(withCounts);
+      // Detect same-bank accounts that could be grouped
+      const bankGroups = new Map<string, typeof withAnalysis>();
+      for (const acc of withAnalysis) {
+        const key = acc.bank_name || "unknown";
+        const group = bankGroups.get(key) ?? [];
+        group.push(acc);
+        bankGroups.set(key, group);
+      }
+
+      // Mark accounts from same bank for grouping suggestion
+      for (const [, group] of bankGroups) {
+        if (group.length >= 2) {
+          for (const acc of group) {
+            (acc as BankAccount & { sameBankGroup?: string }).sameBankGroup =
+              `Mismo banco que *${group.find((g) => g.id !== acc.id)?.identifier}`;
+          }
+        }
+      }
+
+      setAccounts(withAnalysis);
       setOpen(true);
     };
 

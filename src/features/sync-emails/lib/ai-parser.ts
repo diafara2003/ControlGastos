@@ -38,13 +38,16 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)
 
-Reglas:
+Reglas CRÍTICAS (nunca violar):
+- IMPORTANTE: "compraste", "compra", "pago en", "pagaste" SIEMPRE es type = "expense", NUNCA income
+- Si el correo dice "Compraste $X en COMERCIO" es un GASTO, no un ingreso
 - amount siempre es positivo (entero, sin decimales)
 - "compraste", "compra", "pago en", "pagaste" → type = "expense"
 - "transferiste", "enviaste" → type = "expense", categoría = "Transferencias"
 - "te enviaron", "recibiste", "abono", "consignación", "nómina" → type = "income"
 - "retiraste", "retiro", "cajero", "ATM", "Servibanca" → type = "expense", categoría = "Retiro cajero"
 - "pago anticipado", "pago cuota anticipada", "abono a tarjeta", "pago tarjeta" → type = "expense", categoría = "Pago tarjeta crédito"
+- cardLastFour: extraer los últimos 4 dígitos de la cuenta o tarjeta. Formatos posibles: "*1036", "T.Deb *1036", "cuenta **3181", "cuenta Nro.******* 6635", "tarjeta ...4532"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
 - description debe ser útil y descriptiva (ej: "Compra en supermercado con débito *1036", "Pago de nómina SINCOSOFT", "Retiro cajero Servibanca"). NO repetir el asunto del correo ni poner "Alertas y Notificaciones"
@@ -234,6 +237,36 @@ ${email.bodyText.slice(0, 2000)}`;
     const parsed = JSON.parse(cleaned);
 
     if (parsed.error) return null;
+
+    // Post-AI validation: fix obvious misclassifications
+    const bodyLower = email.bodyText.slice(0, 500).toLowerCase();
+    if (parsed.type === "income") {
+      const expenseIndicators = ["compraste", "compra por", "pagaste", "pago en", "retiraste", "débito", "t.deb"];
+      if (expenseIndicators.some((w) => bodyLower.includes(w))) {
+        console.log(`AI correction: "${parsed.merchant}" classified as income but body says expense`);
+        parsed.type = "expense";
+      }
+    }
+
+    // Post-AI: extract card_last_four from body if AI missed it
+    if (!parsed.cardLastFour) {
+      const bodyText = email.bodyText.slice(0, 1000);
+      const patterns = [
+        /\*(\d{4})/,                           // *1036
+        /cuenta\s*\*{2,}\s*(\d{4})/i,          // cuenta **3181
+        /cuenta\s*Nro\.\*+\s*(\d{4})/i,        // cuenta Nro.******* 6635
+        /tarjeta\s*[.*]+(\d{4})/i,             // tarjeta ...4532
+        /T\.(?:Deb|Cred)\s*\*(\d{4})/i,        // T.Deb *1036
+        /terminada\s*en\s*(\d{4})/i,           // terminada en 4532
+      ];
+      for (const p of patterns) {
+        const match = bodyText.match(p);
+        if (match) {
+          parsed.cardLastFour = match[1];
+          break;
+        }
+      }
+    }
 
     if (
       !parsed.type ||
