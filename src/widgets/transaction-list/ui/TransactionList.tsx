@@ -5,6 +5,12 @@ import type { Transaction } from "@/src/entities/transaction";
 import { Spinner } from "@/src/shared/ui/spinner";
 import { formatCOP } from "@/src/shared/lib/currency";
 
+/** Get YYYY-MM-DD in Colombia timezone */
+function toColombiaDate(isoString: string): string {
+  const d = new Date(isoString);
+  return d.toLocaleDateString("en-CA", { timeZone: "America/Bogota" }); // en-CA gives YYYY-MM-DD
+}
+
 interface TransactionListProps {
   transactions: Transaction[];
   loading?: boolean;
@@ -75,7 +81,7 @@ export function TransactionList({
   // Group by date
   const grouped = transactions.reduce<Record<string, Transaction[]>>(
     (acc, t) => {
-      const date = t.transaction_date.split("T")[0];
+      const date = toColombiaDate(t.transaction_date);
       if (!acc[date]) acc[date] = [];
       acc[date].push(t);
       return acc;
