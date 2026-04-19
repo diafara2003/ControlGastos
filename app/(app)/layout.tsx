@@ -6,9 +6,11 @@ import { InstallPrompt } from "@/src/features/pwa-install";
 import { NotificationPrompt } from "@/src/features/push-notifications";
 import { CreditCardCheck } from "@/src/features/credit-card-setup";
 import { BankAccountSetup } from "@/src/features/bank-account-setup";
+import { AccountFilterProvider } from "@/src/shared/context/account-filter";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
+    <AccountFilterProvider>
     <div className="min-h-dvh">
       <AutoSync />
       <Sidebar />
@@ -26,5 +28,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <CreditCardCheck />
       <BankAccountSetup />
     </div>
+    </AccountFilterProvider>
   );
 }
