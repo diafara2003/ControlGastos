@@ -37,7 +37,7 @@ export function SpendingChart({
         </p>
         <p
           className={`text-[32px] font-bold mt-0.5 tracking-tight tabular-nums ${
-            isPositive ? "text-emerald-700" : "text-red-600"
+            isPositive ? "text-emerald-700" : "text-rose-400"
           }`}
           style={{ letterSpacing: "-0.02em" }}
         >
@@ -58,7 +58,7 @@ export function SpendingChart({
           <div className="mt-4">
             <div className="h-1 rounded-full bg-emerald-100 overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all duration-700 ${spendingProgress > 1 ? "bg-red-500" : "bg-emerald-500"}`}
+                className={`h-full rounded-full transition-all duration-700 ${spendingProgress > 1 ? "bg-rose-400" : "bg-emerald-500"}`}
                 style={{ width: `${Math.min(spendingProgress * 100, 100)}%` }}
               />
             </div>
@@ -88,7 +88,7 @@ export function SpendingChart({
           <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
             Gastos
           </p>
-          <p className="text-lg font-bold text-red-600 mt-0.5 tabular-nums">
+          <p className="text-lg font-bold text-rose-400 mt-0.5 tabular-nums">
             {formatCOP(totalExpenses)}
           </p>
         </div>
