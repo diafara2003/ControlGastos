@@ -9,7 +9,6 @@ import {
   Minus,
   ArrowUpRight,
   ArrowDownRight,
-  CalendarDays,
   Store,
   BarChart3,
   DollarSign,
@@ -69,6 +68,7 @@ export function ReportsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const isCurrentMonth =
     selectedDate.getMonth() === new Date().getMonth() &&
@@ -201,6 +201,18 @@ export function ReportsPage() {
   const avgDaily = elapsed > 0 ? totalExpenses / elapsed : 0;
   const projectedTotal = avgDaily * daysInMonth(selectedDate);
 
+  // Transactions grouped by category (for accordion)
+  const transactionsByCategory = useMemo(() => {
+    const map = new Map<string, Transaction[]>();
+    for (const t of expenses) {
+      const key = t.category?.name ?? "Sin categoria";
+      const list = map.get(key) ?? [];
+      list.push(t);
+      map.set(key, list);
+    }
+    return map;
+  }, [expenses]);
+
   // Most frequent merchants (expenses only)
   const topMerchants: MerchantFrequency[] = useMemo(() => {
     const map = new Map<string, { count: number; total: number }>();
@@ -263,7 +275,7 @@ export function ReportsPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
           {/* ============================================================
               1. Resumen del mes
               ============================================================ */}
@@ -276,21 +288,18 @@ export function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4">
-                {/* Ingresos */}
                 <div className="space-y-1">
                   <p className="text-xs text-gray-500">Ingresos</p>
                   <p className="text-lg font-bold text-emerald-600">
                     {formatCOP(totalIncome)}
                   </p>
                 </div>
-                {/* Gastos */}
                 <div className="space-y-1">
                   <p className="text-xs text-gray-500">Gastos</p>
                   <p className="text-lg font-bold text-red-500">
                     {formatCOP(totalExpenses)}
                   </p>
                 </div>
-                {/* Balance */}
                 <div className="space-y-1">
                   <p className="text-xs text-gray-500">Balance</p>
                   <p
@@ -301,7 +310,6 @@ export function ReportsPage() {
                     {formatCOP(balance)}
                   </p>
                 </div>
-                {/* Tasa de ahorro */}
                 <div className="space-y-1">
                   <p className="text-xs text-gray-500">Tasa de ahorro</p>
                   <div className="flex items-center gap-1.5">
@@ -324,50 +332,144 @@ export function ReportsPage() {
           </Card>
 
           {/* ============================================================
-              2. Ingresos
+              2. Comparacion con mes anterior
               ============================================================ */}
-          {income.length > 0 && (
-            <Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-emerald-600" />
+                vs. mes anterior
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <ComparisonRow
+                  label="Ingresos"
+                  current={totalIncome}
+                  previous={prevIncome}
+                />
+                <ComparisonRow
+                  label="Gastos"
+                  current={totalExpenses}
+                  previous={prevExpenses}
+                  invertColor
+                />
+                <ComparisonRow
+                  label="Balance"
+                  current={balance}
+                  previous={prevIncome - prevExpenses}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* ============================================================
+              3. Gastos por categoria (accordion)
+              ============================================================ */}
+          {categoryTotals.length > 0 && (
+            <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-emerald-600" />
-                  Ingresos
+                  <BarChart3 className="h-4 w-4 text-violet-500" />
+                  Gastos por categoria
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  {income.map((t) => (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {t.merchant}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {formatShortDate(t.transaction_date)}
-                        </p>
+                <div className="space-y-1">
+                  {categoryTotals.map((cat) => {
+                    const isExpanded = expandedCategory === cat.name;
+                    const catTransactions = transactionsByCategory.get(cat.name) ?? [];
+
+                    return (
+                      <div key={cat.name}>
+                        <button
+                          onClick={() =>
+                            setExpandedCategory(isExpanded ? null : cat.name)
+                          }
+                          className="w-full text-left py-2.5 transition-colors active:bg-gray-50 rounded-lg"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
+                                style={{ backgroundColor: `${cat.color}15` }}
+                              >
+                                <LucideIcon
+                                  name={cat.icon}
+                                  size={14}
+                                  color={cat.color}
+                                />
+                              </div>
+                              <span className="text-sm text-gray-700 truncate">
+                                {cat.name}
+                              </span>
+                              <span className="text-[10px] text-gray-400">
+                                ({catTransactions.length})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 whitespace-nowrap">
+                              <span className="text-xs text-gray-400">
+                                {cat.percent.toFixed(1)}%
+                              </span>
+                              <span className="text-sm font-semibold text-gray-800">
+                                {formatCOP(cat.total)}
+                              </span>
+                              <ChevronRight
+                                className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+                                  isExpanded ? "rotate-90" : ""
+                                }`}
+                              />
+                            </div>
+                          </div>
+                          <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${cat.percent}%`,
+                                backgroundColor: cat.color,
+                              }}
+                            />
+                          </div>
+                        </button>
+
+                        {isExpanded && (
+                          <div className="ml-9 mb-3 space-y-2 border-l-2 pl-3" style={{ borderColor: `${cat.color}40` }}>
+                            {catTransactions
+                              .sort(
+                                (a, b) =>
+                                  new Date(b.transaction_date).getTime() -
+                                  new Date(a.transaction_date).getTime()
+                              )
+                              .map((t) => (
+                                <div
+                                  key={t.id}
+                                  className="flex items-center justify-between"
+                                >
+                                  <div className="min-w-0">
+                                    <p className="text-sm text-gray-700 truncate">
+                                      {t.merchant}
+                                    </p>
+                                    <p className="text-[11px] text-gray-400">
+                                      {formatShortDate(t.transaction_date)}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm font-medium text-gray-800 whitespace-nowrap ml-3 tabular-nums">
+                                    {formatCOP(t.amount)}
+                                  </p>
+                                </div>
+                              ))}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm font-semibold text-emerald-600 whitespace-nowrap ml-3">
-                        +{formatCOP(t.amount)}
-                      </p>
-                    </div>
-                  ))}
-                  {/* Total */}
-                  <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                    <p className="text-sm font-semibold text-gray-700">Total</p>
-                    <p className="text-sm font-bold text-emerald-600">
-                      {formatCOP(totalIncome)}
-                    </p>
-                  </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* ============================================================
-              3. Top gastos
+              4. Top gastos
               ============================================================ */}
           {topExpenses.length > 0 && (
             <Card>
@@ -417,135 +519,14 @@ export function ReportsPage() {
           )}
 
           {/* ============================================================
-              4. Gastos por categoria
-              ============================================================ */}
-          {categoryTotals.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 text-emerald-600" />
-                  Gastos por categoria
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {categoryTotals.map((cat) => (
-                    <div key={cat.name}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div
-                            className="flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0"
-                            style={{ backgroundColor: `${cat.color}15` }}
-                          >
-                            <LucideIcon name={cat.icon} size={14} color={cat.color} />
-                          </div>
-                          <span className="text-sm text-gray-700 truncate">
-                            {cat.name}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <span className="text-xs text-gray-400">
-                            {cat.percent.toFixed(1)}%
-                          </span>
-                          <span className="text-sm font-semibold text-gray-800">
-                            {formatCOP(cat.total)}
-                          </span>
-                        </div>
-                      </div>
-                      {/* Bar */}
-                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${cat.percent}%`,
-                            backgroundColor: cat.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* ============================================================
-              5. Gasto diario promedio
-              ============================================================ */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-emerald-600" />
-                Gasto diario promedio
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500">Promedio diario</p>
-                  <p className="text-lg font-bold text-gray-800">
-                    {formatCOP(avgDaily)}
-                  </p>
-                </div>
-                {isCurrentMonth && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-gray-500">Proyectado al mes</p>
-                    <p className="text-lg font-bold text-gray-600">
-                      {formatCOP(projectedTotal)}
-                    </p>
-                  </div>
-                )}
-                <div className="space-y-1">
-                  <p className="text-xs text-gray-500">Dias transcurridos</p>
-                  <p className="text-sm font-medium text-gray-600">
-                    {elapsed} de {daysInMonth(selectedDate)}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ============================================================
-              6. Comparacion con mes anterior
-              ============================================================ */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-emerald-600" />
-                Comparacion con mes anterior
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <ComparisonRow
-                  label="Ingresos"
-                  current={totalIncome}
-                  previous={prevIncome}
-                />
-                <ComparisonRow
-                  label="Gastos"
-                  current={totalExpenses}
-                  previous={prevExpenses}
-                  invertColor
-                />
-                <ComparisonRow
-                  label="Balance"
-                  current={balance}
-                  previous={prevIncome - prevExpenses}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* ============================================================
-              7. Merchants mas frecuentes
+              5. Comercios mas frecuentes
               ============================================================ */}
           {topMerchants.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Store className="h-4 w-4 text-emerald-600" />
-                  Merchants mas frecuentes
+                  Comercios frecuentes
                 </CardTitle>
               </CardHeader>
               <CardContent>

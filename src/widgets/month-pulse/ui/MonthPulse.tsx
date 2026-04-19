@@ -8,6 +8,7 @@ interface MonthPulseProps {
   totalIncome: number;
   lastMonthExpensesSameDay: number;
   selectedDate: Date;
+  savingsGoal?: number | null;
 }
 
 export function MonthPulse({
@@ -15,6 +16,7 @@ export function MonthPulse({
   totalIncome,
   lastMonthExpensesSameDay,
   selectedDate,
+  savingsGoal,
 }: MonthPulseProps) {
   const now = new Date();
   const year = selectedDate.getFullYear();
@@ -27,7 +29,11 @@ export function MonthPulse({
 
   const avgDaily = dayElapsed > 0 ? totalExpenses / dayElapsed : 0;
   const projected = isCurrentMonth ? avgDaily * daysInMonth : totalExpenses;
-  const withinBudget = totalIncome > 0 ? projected <= totalIncome : true;
+  // If savings goal is set, the spending limit is income minus the goal
+  const spendingLimit = savingsGoal != null && totalIncome > 0
+    ? totalIncome - savingsGoal
+    : totalIncome;
+  const withinBudget = spendingLimit > 0 ? projected <= spendingLimit : true;
 
   const diff = totalExpenses - lastMonthExpensesSameDay;
   const diffPct =
@@ -110,8 +116,12 @@ export function MonthPulse({
           {totalIncome > 0 && (
             <p className="text-[11px] text-gray-500 mt-1">
               {withinBudget
-                ? `Te sobrarán ${formatCOP(Math.round(totalIncome - projected))}`
-                : `Te excederás ${formatCOP(Math.round(projected - totalIncome))} de tus ingresos`}
+                ? savingsGoal != null
+                  ? `Ahorrarás ${formatCOP(Math.round(totalIncome - projected))} (meta: ${formatCOP(savingsGoal)})`
+                  : `Te sobrarán ${formatCOP(Math.round(totalIncome - projected))}`
+                : savingsGoal != null
+                  ? `Te excederás ${formatCOP(Math.round(projected - spendingLimit))} de tu presupuesto (sin contar ahorro)`
+                  : `Te excederás ${formatCOP(Math.round(projected - totalIncome))} de tus ingresos`}
             </p>
           )}
         </div>

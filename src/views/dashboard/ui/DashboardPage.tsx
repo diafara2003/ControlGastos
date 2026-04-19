@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { MonthPulse } from "@/src/widgets/month-pulse";
-import { DailyRhythm } from "@/src/widgets/daily-rhythm";
 import { CategoryAlerts, type CategoryAlert } from "@/src/widgets/category-alerts";
+import { SavingsGoal } from "@/src/widgets/savings-goal";
 import { getTransactions } from "@/src/entities/transaction";
+import { createClient } from "@/src/shared/api/supabase/client";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
 import { Spinner } from "@/src/shared/ui/spinner";
@@ -20,6 +21,8 @@ export function DashboardPage() {
   const [lastMonthSameDay, setLastMonthSameDay] = useState(0);
   const [alerts, setAlerts] = useState<CategoryAlert[]>([]);
   const [hasHistory, setHasHistory] = useState(false);
+  const [savingsGoal, setSavingsGoal] = useState<number | null>(null);
+  const [totalBudgets, setTotalBudgets] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const isCurrentMonth =
@@ -59,13 +62,28 @@ export function DashboardPage() {
       historyEnd.setDate(0); // last day of previous month
       historyEnd.setHours(23, 59, 59, 999);
 
-      const [txns, history] = await Promise.all([
+      const supabase = createClient();
+      const [txns, history, profileRes, budgetsRes] = await Promise.all([
         getTransactions({ startDate: start, endDate: end }),
         getTransactions({
           startDate: historyStart.toISOString(),
           endDate: historyEnd.toISOString(),
         }).catch(() => []),
+        supabase.auth.getUser().then(({ data: { user } }) =>
+          user
+            ? supabase
+                .from("profiles")
+                .select("savings_goal")
+                .eq("id", user.id)
+                .single()
+            : null
+        ),
+        Promise.resolve(supabase.rpc("get_budget_progress")).catch(() => null),
       ]);
+
+      setSavingsGoal(profileRes?.data?.savings_goal ?? null);
+      const budgetItems = (budgetsRes?.data ?? []) as { amount_limit: number }[];
+      setTotalBudgets(budgetItems.reduce((s, b) => s + b.amount_limit, 0));
 
       setTransactions(txns);
 
@@ -228,18 +246,25 @@ export function DashboardPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4 stagger-children">
-          <MonthPulse
-            totalExpenses={totals.expenses}
-            totalIncome={totals.income}
-            lastMonthExpensesSameDay={lastMonthSameDay}
-            selectedDate={selectedDate}
-          />
+        <div className="space-y-4 stagger-children md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
+          {/* MonthPulse spans full width on desktop */}
+          <div className="md:col-span-2">
+            <MonthPulse
+              totalExpenses={totals.expenses}
+              totalIncome={totals.income}
+              lastMonthExpensesSameDay={lastMonthSameDay}
+              selectedDate={selectedDate}
+              savingsGoal={savingsGoal}
+            />
+          </div>
 
-          <DailyRhythm
-            totalExpenses={totals.expenses}
+          <SavingsGoal
             totalIncome={totals.income}
+            totalExpenses={totals.expenses}
+            totalBudgets={totalBudgets}
+            savingsGoal={savingsGoal}
             selectedDate={selectedDate}
+            onGoalUpdated={setSavingsGoal}
           />
 
           {isCurrentMonth && (

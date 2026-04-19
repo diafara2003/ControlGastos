@@ -35,6 +35,28 @@ export async function POST(request: Request) {
   return syncAllAccounts(userId, maxEmails);
 }
 
+/**
+ * Payroll payments received in the last 5 days of a month belong to next month's budget.
+ * Shifts their transaction_date to the 1st of the following month.
+ */
+function adjustPayrollDate(parsed: { type: string; description: string | null; merchant: string }, txDate: Date): Date {
+  const PAYROLL_KEYWORDS = ["nómina", "nomina", "pago de nomina", "pago de nómina"];
+  const text = `${parsed.description ?? ""} ${parsed.merchant}`.toLowerCase();
+  const isPayroll = parsed.type === "income" && PAYROLL_KEYWORDS.some((kw) => text.includes(kw));
+
+  if (!isPayroll) return txDate;
+
+  const daysInMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0).getDate();
+  const daysLeft = daysInMonth - txDate.getDate();
+
+  if (daysLeft < 5) {
+    // Midnight Colombia (UTC-5) on the 1st of next month
+    return new Date(Date.UTC(txDate.getFullYear(), txDate.getMonth() + 1, 1, 5));
+  }
+
+  return txDate;
+}
+
 async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
   const supabase = createServiceClient();
   const results: {
@@ -169,7 +191,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             merchant: result.parsed.merchant,
             description: result.parsed.description,
             category_id: categoryId,
-            transaction_date: result.parsed.transactionDate.toISOString(),
+            transaction_date: adjustPayrollDate(result.parsed, result.parsed.transactionDate).toISOString(),
             classification_method: "ai",
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
@@ -223,6 +245,9 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 
     results.push(logEntry);
   }
+
+  // Close previous month's savings history if we're in a new month
+  await closePreviousMonthSavings(supabase);
 
   const totalCreated = results.reduce((sum, r) => sum + r.created, 0);
   return NextResponse.json({
@@ -312,4 +337,65 @@ async function updateSyncLog(
       finished_at: new Date().toISOString(),
     })
     .eq("id", logId);
+}
+
+/**
+ * At the start of each month, close the previous month's savings_history
+ * by computing actual_savings (income - expenses) and whether the goal was met.
+ */
+async function closePreviousMonthSavings(
+  supabase: ReturnType<typeof createServiceClient>
+) {
+  try {
+    const now = new Date();
+    // Only run in the first 5 days of a month
+    if (now.getDate() > 5) return;
+
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const monthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`;
+
+    // Find savings_history records for prev month that haven't been closed
+    const { data: openRecords } = await supabase
+      .from("savings_history")
+      .select("id, user_id, goal")
+      .eq("month", monthKey)
+      .is("actual_savings", null);
+
+    if (!openRecords || openRecords.length === 0) return;
+
+    const prevStart = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
+    const prevEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59);
+
+    for (const record of openRecords) {
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("type, amount")
+        .eq("user_id", record.user_id)
+        .gte("transaction_date", prevStart.toISOString())
+        .lte("transaction_date", prevEnd.toISOString());
+
+      if (!txns) continue;
+
+      const income = txns
+        .filter((t) => t.type === "income")
+        .reduce((s, t) => s + t.amount, 0);
+      const expenses = txns
+        .filter((t) => t.type === "expense")
+        .reduce((s, t) => s + t.amount, 0);
+      const actualSavings = income - expenses;
+
+      await supabase
+        .from("savings_history")
+        .update({
+          actual_savings: actualSavings,
+          met: actualSavings >= record.goal,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", record.id);
+    }
+
+    console.log(`Closed ${openRecords.length} savings records for ${monthKey}`);
+  } catch (err) {
+    console.error("Error closing savings history:", err);
+  }
 }

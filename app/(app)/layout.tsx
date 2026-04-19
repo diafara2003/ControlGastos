@@ -15,7 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile: centered with header/bottom nav padding */}
       {/* Desktop: offset by sidebar, more width, no header/bottom nav */}
-      <main className="mx-auto max-w-lg px-4 pb-20 pt-14 md:ml-60 md:pt-6 md:pb-6 md:max-w-2xl">
+      <main className="mx-auto max-w-lg px-4 pb-20 pt-14 md:ml-60 md:pt-6 md:pb-6 md:max-w-5xl md:px-8">
         {children}
       </main>
 
