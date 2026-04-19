@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { formatCOP } from "@/src/shared/lib/currency";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 
 export interface CategoryAlert {
   name: string;
@@ -53,7 +54,7 @@ export function CategoryAlerts({ alerts, hasHistory }: CategoryAlertsProps) {
                   className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0 text-sm"
                   style={{ backgroundColor: `${a.color}20`, color: a.color }}
                 >
-                  {a.icon}
+                  <LucideIcon name={a.icon} size={16} />
                 </div>
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
