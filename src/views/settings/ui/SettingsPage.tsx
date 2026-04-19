@@ -304,47 +304,14 @@ export function SettingsPage() {
         }}
       />
 
-      {/* Credit cards */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Tarjetas de crédito
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {userCards.length === 0 ? (
-            <p className="text-sm text-gray-500 py-1">
-              No has configurado tarjetas de crédito.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {userCards.map((card) => (
-                <Badge key={card.bank_name} variant="secondary" className="text-xs">
-                  {card.bank_name}
-                  {card.product_type === "bnpl" && " (BNPL)"}
-                </Badge>
-              ))}
-            </div>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => setShowCardModal(true)}
-            className="w-full"
-          >
-            <CreditCard className="h-4 w-4" />
-            {userCards.length > 0 ? "Editar tarjetas" : "Agregar tarjetas"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <CreditCardSetupModal
+      {/* Credit cards section removed - replaced by bank_accounts */}
+      {false && <CreditCardSetupModal
         open={showCardModal}
         onComplete={() => {
           setShowCardModal(false);
           loadAccounts();
         }}
-      />
+      />}
 
       {/* Bank accounts - accordion */}
       {bankAccounts.length > 0 && (

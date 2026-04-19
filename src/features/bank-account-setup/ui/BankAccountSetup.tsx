@@ -23,6 +23,7 @@ interface BankAccount {
   track_expenses: boolean;
   track_income: boolean;
   label: string | null;
+  group_id: string | null;
   txn_count?: number;
   sameBankGroup?: string;
 }
@@ -195,6 +196,7 @@ export function BankAccountSetup() {
           is_tracked: acc.is_tracked,
           track_expenses: acc.track_expenses,
           track_income: acc.track_income,
+          group_id: acc.group_id,
         })
         .eq("id", acc.id);
     }
@@ -264,9 +266,38 @@ export function BankAccountSetup() {
                 </div>
               )}
               {acc.sameBankGroup && (
-                <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5">
-                  <span className="text-[10px] text-amber-500">Info:</span>
-                  <span className="text-[11px] font-medium text-amber-700">{acc.sameBankGroup}</span>
+                <div className="rounded-lg bg-amber-50 px-2.5 py-1.5 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-amber-500">Info:</span>
+                    <span className="text-[11px] font-medium text-amber-700">{acc.sameBankGroup}</span>
+                  </div>
+                  {!acc.group_id && (() => {
+                    const sameBankAccounts = accounts.filter(
+                      (a) => a.id !== acc.id && a.bank_name === acc.bank_name
+                    );
+                    if (sameBankAccounts.length === 0) return null;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const groupId = crypto.randomUUID();
+                          setAccounts((prev) =>
+                            prev.map((a) =>
+                              a.bank_name === acc.bank_name
+                                ? { ...a, group_id: groupId, label: prev.find(p => p.bank_name === acc.bank_name)?.label || `Bancolombia` }
+                                : a
+                            )
+                          );
+                        }}
+                        className="text-[11px] font-medium text-amber-600 underline"
+                      >
+                        Agrupar como una sola cuenta
+                      </button>
+                    );
+                  })()}
+                  {acc.group_id && (
+                    <span className="text-[10px] text-emerald-600 font-medium">Agrupada</span>
+                  )}
                 </div>
               )}
 

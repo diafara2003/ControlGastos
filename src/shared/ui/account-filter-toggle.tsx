@@ -4,37 +4,32 @@ import { useAccountFilter } from "@/src/shared/context/account-filter";
 import { getBankBrand } from "@/src/shared/config/bank-brands";
 
 export function AccountFilterToggle() {
-  const { selectedAccount, setSelectedAccount, accounts, hasMultipleAccounts } = useAccountFilter();
+  const { selectedAccount, setSelectedAccount, groups, hasMultipleAccounts } = useAccountFilter();
 
-  // Only show tracked accounts in the toggle
-  const trackedAccounts = accounts.filter((a) => a.is_tracked);
+  const trackedGroups = groups.filter((g) => g.is_tracked);
 
-  if (!hasMultipleAccounts || trackedAccounts.length < 1) return null;
-
-  // Only show toggle if there are 2+ tracked accounts
-  if (trackedAccounts.length < 2 && selectedAccount === "all") return null;
+  if (!hasMultipleAccounts || trackedGroups.length < 2) return null;
 
   return (
     <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-      {trackedAccounts.length >= 2 && (
-        <button
-          onClick={() => setSelectedAccount("all")}
-          className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-            selectedAccount === "all"
-              ? "bg-gray-900 text-white"
-              : "bg-gray-100 text-gray-500"
-          }`}
-        >
-          Todas
-        </button>
-      )}
-      {trackedAccounts.map((acc) => {
-        const brand = getBankBrand(acc.bank_name);
-        const isActive = selectedAccount === acc.identifier;
+      <button
+        onClick={() => setSelectedAccount("all")}
+        className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+          selectedAccount === "all"
+            ? "bg-gray-900 text-white"
+            : "bg-gray-100 text-gray-500"
+        }`}
+      >
+        Todas
+      </button>
+      {trackedGroups.map((group) => {
+        const brand = getBankBrand(group.bank_name);
+        const isActive = group.identifiers.includes(selectedAccount);
+        const displayId = group.identifiers.join("/");
         return (
           <button
-            key={acc.id}
-            onClick={() => setSelectedAccount(acc.identifier)}
+            key={group.id}
+            onClick={() => setSelectedAccount(group.identifiers[0])}
             className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               isActive
                 ? "text-white"
@@ -52,7 +47,7 @@ export function AccountFilterToggle() {
             >
               {brand.initials}
             </span>
-            {acc.label ?? `*${acc.identifier}`}
+            {group.label ?? `*${displayId}`}
           </button>
         );
       })}
