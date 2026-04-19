@@ -3,23 +3,29 @@ export const APP_DESCRIPTION =
   "Tu app de finanzas personales que lee tus correos bancarios";
 
 export const FINANCIAL_SENDERS = [
-  // Bancos
-  "alertasynotificaciones@bancolombia.com.co",
-  "alertasynotificaciones@an.notificacionesbancolombia.com",
+  // Bancos (dominios para atrapar cualquier remitente)
+  "bancolombia.com.co",
   "notificacionesbancolombia.com",
-  "notificaciones@nequi.com",
+  "nequi.com",
   "nequi.com.co",
-  "alertas@davivienda.com",
-  "notificaciones@davivienda.com",
-  "alertas@bancocajasocial.com",
-  "notificaciones@avvillas.com.co",
-  "alertas@bbva.com.co",
-  "notificaciones@scotiabank.com.co",
-  "alertas@bancodebogota.com",
-  "notificaciones@bancodeoccidente.com",
-  "alertas@bancopopular.com",
-  "notificaciones@bancofalabella.com",
-  "notificaciones@itau.co",
+  "davivienda.com",
+  "bancocajasocial.com",
+  "avvillas.com.co",
+  "bbva.com.co",
+  "scotiabank.com.co",
+  "bancodebogota.com",
+  "bancodeoccidente.com",
+  "bancopopular.com",
+  "bancofalabella.com",
+  "itau.co",
+  "bancoagrario.com",
+  "gnbsudameris.com",
+  "pichincha.com",
+  "finandina.com",
+  "serfinanza.com",
+  "bancoomeva.com",
+  "bancamia.com",
+  "colpatria.com",
   // Fintech / BNPL
   "addi.com",
   "soynu.com.co",
@@ -28,6 +34,8 @@ export const FINANCIAL_SENDERS = [
   "daviplata.com",
   "lulo.bank",
   "movii.co",
+  "dale.co",
+  "uala.com.co",
 ] as const;
 
 export const ROUTES = {
