@@ -45,6 +45,24 @@ Reglas:
 - transactionDate debe extraerse del cuerpo del correo, no del header
 - Extractos de tarjeta de crédito o servicios (Addi, Nu, etc.) con "total a pagar", "saldo a pagar" o "valor de tu cuota" → type = "expense", merchant = nombre del servicio (ej: "Addi", "Nu"), categoría = "Otros", amount = el total/cuota a pagar`;
 
+/**
+ * Parse a date string and ensure it represents midnight in Colombia (UTC-5).
+ * If the AI returns just "2026-04-18", new Date() treats it as midnight UTC,
+ * which is 7pm previous day in Colombia. This fixes that.
+ */
+function toColombiaDate(aiDate: string | undefined, emailDate: string): Date {
+  const raw = aiDate || emailDate;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return new Date(emailDate);
+
+  // If it's a date-only string (no time component), add Colombia offset
+  if (aiDate && /^\d{4}-\d{2}-\d{2}$/.test(aiDate.trim())) {
+    return new Date(d.getTime() + 5 * 60 * 60 * 1000); // UTC midnight + 5h = COT midnight
+  }
+
+  return d;
+}
+
 export interface AIParseResult extends ParsedTransaction {
   categoryName: string;
 }
@@ -86,9 +104,7 @@ ${email.bodyText.slice(0, 2000)}`;
       amount: Math.round(parsed.amount),
       merchant: parsed.merchant,
       description: parsed.description || null,
-      transactionDate: parsed.transactionDate
-        ? new Date(parsed.transactionDate)
-        : new Date(email.date),
+      transactionDate: toColombiaDate(parsed.transactionDate, email.date),
       cardLastFour: parsed.cardLastFour || null,
       categoryName: parsed.categoryName || "Otros",
     };
