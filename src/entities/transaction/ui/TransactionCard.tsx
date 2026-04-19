@@ -48,6 +48,11 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
               sugerida
             </span>
           )}
+          {isWithdrawal && transaction.withdrawal_resolved && (
+            <span className="ml-1 text-[9px] text-emerald-600 font-medium bg-emerald-50 px-1 py-0.5 rounded">
+              detallado
+            </span>
+          )}
           {pendingDetails && (
             <span className="ml-1 text-[9px] text-amber-600 font-medium bg-amber-50 px-1 py-0.5 rounded">
               sin detallar

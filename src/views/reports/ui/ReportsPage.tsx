@@ -19,6 +19,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
+import { createClient } from "@/src/shared/api/supabase/client";
 import { getTransactions } from "@/src/entities/transaction";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
@@ -74,6 +75,8 @@ export function ReportsPage() {
   const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const [expandedWithdrawal, setExpandedWithdrawal] = useState<string | null>(null);
+  const [withdrawalDetails, setWithdrawalDetails] = useState<Record<string, { description: string; amount: number }[]>>({});
   const { selectedAccount } = useAccountFilter();
 
   const isCurrentMonth =
@@ -115,6 +118,32 @@ export function ReportsPage() {
 
       setTransactions(txns);
       setPrevTransactions(prev);
+
+      // Load withdrawal details for resolved withdrawals
+      const withdrawalTxnIds = txns
+        .filter((t) =>
+          t.category?.name === "Retiro cajero" ||
+          t.category?.name === "Efectivo" ||
+          /cajero|retiro|atm|servibanca/i.test(t.merchant)
+        )
+        .map((t) => t.id);
+
+      if (withdrawalTxnIds.length > 0) {
+        const supabase = createClient();
+        const { data: details } = await supabase
+          .from("withdrawal_details")
+          .select("transaction_id, description, amount")
+          .in("transaction_id", withdrawalTxnIds);
+
+        if (details) {
+          const grouped: Record<string, { description: string; amount: number }[]> = {};
+          for (const d of details) {
+            if (!grouped[d.transaction_id]) grouped[d.transaction_id] = [];
+            grouped[d.transaction_id].push({ description: d.description, amount: d.amount });
+          }
+          setWithdrawalDetails(grouped);
+        }
+      }
     } catch (err) {
       console.error("Error loading report:", err);
     } finally {
@@ -663,32 +692,59 @@ export function ReportsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  {withdrawals.map((t) => (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        {t.withdrawal_resolved ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm text-gray-800 truncate">{t.merchant}</p>
-                          <p className="text-[11px] text-gray-400">
-                            {formatShortDate(t.transaction_date)}
-                            {!t.withdrawal_resolved && (
-                              <span className="text-amber-500 ml-1">· sin detallar</span>
+                  {withdrawals.map((t) => {
+                    const details = withdrawalDetails[t.id] ?? [];
+                    const isExpanded = expandedWithdrawal === t.id;
+                    return (
+                      <div key={t.id} className="rounded-lg border border-gray-100 overflow-hidden">
+                        <button
+                          onClick={() => setExpandedWithdrawal(isExpanded ? null : t.id)}
+                          className="w-full flex items-center justify-between px-3 py-2 text-left transition-colors active:bg-gray-50"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {t.withdrawal_resolved ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                            ) : (
+                              <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                             )}
-                          </p>
-                        </div>
+                            <div className="min-w-0">
+                              <p className="text-sm text-gray-800 truncate">{t.merchant}</p>
+                              <p className="text-[11px] text-gray-400">
+                                {formatShortDate(t.transaction_date)}
+                                {details.length > 0 && (
+                                  <span className="text-gray-300 ml-1">· {details.length} concepto{details.length > 1 ? "s" : ""}</span>
+                                )}
+                                {!t.withdrawal_resolved && (
+                                  <span className="text-amber-500 ml-1">· pendiente</span>
+                                )}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0 ml-3">
+                            <p className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap">
+                              {formatCOP(t.amount)}
+                            </p>
+                            <ChevronRight className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
+                          </div>
+                        </button>
+                        {isExpanded && details.length > 0 && (
+                          <div className="border-t border-gray-100 bg-gray-50/50 px-3 py-2 space-y-1.5">
+                            {details.map((d, i) => (
+                              <div key={i} className="flex justify-between">
+                                <span className="text-xs text-gray-600">{d.description}</span>
+                                <span className="text-xs font-medium text-gray-700 tabular-nums">{formatCOP(d.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {isExpanded && details.length === 0 && (
+                          <div className="border-t border-gray-100 bg-amber-50/50 px-3 py-2">
+                            <p className="text-xs text-amber-600">Sin conceptos registrados</p>
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap ml-3">
-                        {formatCOP(t.amount)}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {pendingWithdrawals.length > 0 && (

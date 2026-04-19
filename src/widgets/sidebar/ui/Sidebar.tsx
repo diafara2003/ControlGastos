@@ -36,19 +36,29 @@ export function Sidebar() {
   } | null>(null);
   const [notifications, setNotifications] = useState<SidebarNotification[]>([]);
   const [bellOpen, setBellOpen] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user: u } }) => {
       if (u) {
+        setUserId(u.id);
         setUser({
           name: u.user_metadata?.full_name ?? u.user_metadata?.name ?? null,
           avatar: u.user_metadata?.avatar_url ?? u.user_metadata?.picture ?? null,
           email: u.email ?? "",
         });
+      }
+    });
+  }, []);
 
-        // Load notifications
-        const loadNotifs = async () => {
+  // Load notifications - runs on mount and when transactions update
+  useEffect(() => {
+    if (!userId) return;
+
+    const loadNotifs = async () => {
+      const supabase = createClient();
+      const u = { id: userId };
           const notifs: SidebarNotification[] = [];
           // Get Retiro cajero category ID
           const { data: retiroCat } = await supabase
@@ -129,12 +139,16 @@ export function Sidebar() {
             }
           }
 
-          setNotifications(notifs);
-        };
-        loadNotifs();
-      }
-    });
-  }, []);
+      setNotifications(notifs);
+    };
+
+    loadNotifs();
+
+    // Refresh when transactions are updated (e.g., withdrawal resolved)
+    const handler = () => loadNotifs();
+    window.addEventListener("transactions-updated", handler);
+    return () => window.removeEventListener("transactions-updated", handler);
+  }, [userId]);
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-60 flex-col border-r border-gray-100 z-40 sidebar-bg">

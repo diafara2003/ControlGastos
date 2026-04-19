@@ -95,6 +95,7 @@ export function WithdrawalDetailsModal({
           .from("transactions")
           .update({ withdrawal_resolved: true })
           .eq("id", transaction.id);
+        window.dispatchEvent(new CustomEvent("transactions-updated"));
       }
     }
 
@@ -114,6 +115,7 @@ export function WithdrawalDetailsModal({
         .from("transactions")
         .update({ withdrawal_resolved: false })
         .eq("id", transaction.id);
+      window.dispatchEvent(new CustomEvent("transactions-updated"));
     }
   };
 
