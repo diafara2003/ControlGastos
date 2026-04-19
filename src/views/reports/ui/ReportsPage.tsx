@@ -236,9 +236,9 @@ export function ReportsPage() {
 
   // ---- Render ----
   return (
-    <div className="space-y-5 pb-2">
-      {/* Month navigation */}
-      <div className="flex items-center justify-between px-1">
+    <div className="pb-2">
+      {/* Month navigation - sticky */}
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 flex items-center justify-between">
         <Button
           variant="ghost"
           size="icon"
@@ -262,6 +262,7 @@ export function ReportsPage() {
         </Button>
       </div>
 
+      <div className="space-y-5 mt-4">
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <Spinner className="h-8 w-8" />
@@ -558,6 +559,7 @@ export function ReportsPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }

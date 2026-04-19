@@ -208,8 +208,8 @@ export function DashboardPage() {
   const hasData = transactions.length > 0;
 
   return (
-    <div className="space-y-5 pb-4">
-      <div className="flex items-center justify-center gap-6 pt-1">
+    <div className="pb-4">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 flex items-center justify-center gap-6">
         <button
           onClick={goToPreviousMonth}
           className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100"
@@ -231,6 +231,7 @@ export function DashboardPage() {
         </button>
       </div>
 
+      <div className="space-y-5 mt-4">
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3">
           <Spinner className="h-8 w-8" />
@@ -272,6 +273,7 @@ export function DashboardPage() {
           )}
         </div>
       )}
+      </div>
     </div>
   );
 }
