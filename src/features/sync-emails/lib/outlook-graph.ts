@@ -1,21 +1,36 @@
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import type { FetchedEmail } from "./gmail";
 
-const FINANCIAL_KEYWORDS = [
-  // Bancos colombianos
-  "bancolombia", "notificacionesbancolombia", "nequi", "davivienda",
-  "bbva", "scotiabank", "colpatria", "cajasocial", "avvillas",
-  "banco", "bancoagrario", "bancopopular", "bancodebogota",
-  "bancodeoccidente", "bancocajasocial", "itau", "gnb sudameris",
-  "citibank", "pichincha", "falabella", "finandina", "serfinanza",
-  "bancoomeva", "bancamia", "lulo bank", "nu.com", "nubank",
-  "rappipay", "daviplata", "movii", "dale", "ualá", "addi",
-  // Palabras clave de transacciones
-  "compra", "compraste", "pagaste", "pago", "retiro", "retiraste",
-  "transferencia", "transferiste", "te enviaron", "recibiste",
-  "débito", "debito", "crédito", "credito",
-  "tarjeta", "saldo", "nómina", "nomina",
-  "consignación", "consignacion", "PSE",
+// Sender domains that send transaction notifications (not marketing)
+const FINANCIAL_SENDERS = [
+  "alertasynotificaciones@bancolombia.com.co",
+  "alertasynotificaciones@an.notificacionesbancolombia.com",
+  "notificaciones@nequi.com",
+  "alertas@davivienda.com", "notificaciones@davivienda.com",
+  "alertas@bancocajasocial.com", "notificaciones@avvillas.com.co",
+  "alertas@bbva.com.co", "notificaciones@scotiabank.com.co",
+  "notificaciones@colpatria.com", "alertas@bancodebogota.com",
+  "notificaciones@bancodeoccidente.com", "alertas@bancopopular.com",
+  "notificaciones@bancoagrario.com", "notificaciones@itau.co",
+  "notificaciones@gnbsudameris.com", "notificaciones@pichincha.com",
+  "notificaciones@bancofalabella.com", "notificaciones@finandina.com",
+  "notificaciones@serfinanza.com", "notificaciones@bancoomeva.com",
+  "notificaciones@bancamia.com",
+  "soporte@addi.com", "noreply@addi.com",
+  "noreply@lulo.bank", "notificaciones@rappipay.co",
+  "notificaciones@daviplata.com", "notificaciones@movii.co",
+  "noreply@dale.co", "noreply@uala.com.co",
+  "notificaciones@nu.com.co", "noreply@soynu.com.co",
+];
+
+// Keywords that indicate an actual transaction in the email body/subject
+const TRANSACTION_KEYWORDS = [
+  "compraste", "pagaste", "retiraste", "transferiste",
+  "te enviaron", "recibiste", "te consignaron",
+  "compra por", "pago por", "retiro por", "transferencia por",
+  "débito automático", "debito automatico",
+  "nómina", "nomina", "consignación", "consignacion",
+  "tu cuenta *", "t.deb *", "t.cred *", "tarjeta *",
 ];
 
 async function refreshMicrosoftToken(
@@ -120,14 +135,20 @@ export async function fetchOutlookGraphEmails(
 
   if (allMessages.length === 0) return [];
 
-  // Step 2: Filter by financial keywords
+  // Step 2: Filter — match by known sender OR transaction keywords in body
   const financialMessages = allMessages.filter(
     (msg: { from?: { emailAddress?: { address?: string } }; subject?: string; bodyPreview?: string }) => {
       const from = msg.from?.emailAddress?.address?.toLowerCase() ?? "";
       const subject = (msg.subject ?? "").toLowerCase();
       const preview = (msg.bodyPreview ?? "").toLowerCase();
-      const combined = `${from} ${subject} ${preview}`;
-      return FINANCIAL_KEYWORDS.some((kw) => combined.includes(kw));
+
+      // Match if sender is a known financial notification sender
+      const isFinancialSender = FINANCIAL_SENDERS.some((s) => from.includes(s));
+      if (isFinancialSender) return true;
+
+      // Match if body/subject contains transaction keywords (not just bank name)
+      const content = `${subject} ${preview}`;
+      return TRANSACTION_KEYWORDS.some((kw) => content.includes(kw));
     }
   );
 

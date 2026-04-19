@@ -30,14 +30,14 @@ export function SpendingChart({
 
   return (
     <div className="space-y-4">
-      {/* Balance card — emerald theme */}
-      <div className="rounded-2xl bg-emerald-600 px-5 pt-5 pb-4">
-        <p className="text-xs font-medium text-emerald-100/70 tracking-wide">
+      {/* Balance card */}
+      <div className="rounded-2xl border-2 border-emerald-600 px-5 pt-5 pb-4">
+        <p className="text-xs font-medium text-gray-500 tracking-wide">
           Saldo disponible
         </p>
         <p
           className={`text-[32px] font-bold mt-0.5 tracking-tight tabular-nums ${
-            isPositive ? "text-white" : "text-red-300"
+            isPositive ? "text-emerald-700" : "text-red-600"
           }`}
           style={{ letterSpacing: "-0.02em" }}
         >
@@ -45,9 +45,9 @@ export function SpendingChart({
         </p>
 
         {isCurrentMonth && daysLeft > 0 && totalIncome > 0 && (
-          <p className="text-xs text-emerald-100 mt-1.5">
+          <p className="text-xs text-gray-500 mt-1.5">
             Puedes gastar{" "}
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-gray-900">
               {dailyBudget > 0 ? formatCOP(Math.round(dailyBudget)) : "$0"}
             </span>{" "}
             por día
@@ -56,13 +56,13 @@ export function SpendingChart({
 
         {totalIncome > 0 && (
           <div className="mt-4">
-            <div className="h-1 rounded-full bg-emerald-500/40 overflow-hidden">
+            <div className="h-1 rounded-full bg-emerald-100 overflow-hidden">
               <div
-                className="h-full rounded-full bg-white transition-all duration-700"
+                className={`h-full rounded-full transition-all duration-700 ${spendingProgress > 1 ? "bg-red-500" : "bg-emerald-500"}`}
                 style={{ width: `${Math.min(spendingProgress * 100, 100)}%` }}
               />
             </div>
-            <div className="flex justify-between mt-1.5 text-[10px] text-emerald-200/60">
+            <div className="flex justify-between mt-1.5 text-[10px] text-gray-400">
               <span>{Math.round(spendingProgress * 100)}% gastado</span>
               <span>
                 {isCurrentMonth
