@@ -53,8 +53,28 @@ export function AppHeader() {
 
       const notifs: Notification[] = [];
 
-      // Pending withdrawals
-      const { data: withdrawals } = await supabase
+      // Pending withdrawals — by category + merchant keywords
+      const { data: retiroCat } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("user_id", u.id)
+        .in("name", ["Retiro cajero", "Efectivo"]);
+
+      const retiroCatIds = retiroCat?.map((c) => c.id) ?? [];
+
+      const { data: wByCat } = retiroCatIds.length > 0
+        ? await supabase
+            .from("transactions")
+            .select("id, amount, merchant, transaction_date")
+            .eq("user_id", u.id)
+            .eq("type", "expense")
+            .eq("withdrawal_resolved", false)
+            .in("category_id", retiroCatIds)
+            .order("transaction_date", { ascending: false })
+            .limit(5)
+        : { data: [] };
+
+      const { data: wByMerchant } = await supabase
         .from("transactions")
         .select("id, amount, merchant, transaction_date")
         .eq("user_id", u.id)
@@ -64,16 +84,17 @@ export function AppHeader() {
         .order("transaction_date", { ascending: false })
         .limit(5);
 
-      if (withdrawals) {
-        for (const w of withdrawals) {
-          notifs.push({
-            id: `w-${w.id}`,
-            type: "withdrawal",
-            title: `Retiro sin detallar`,
-            description: `${formatCOP(w.amount)} — ${w.merchant} · ${formatShortDate(w.transaction_date)}`,
-            url: "/transactions?filter=withdrawals",
-          });
-        }
+      const seen = new Set<string>();
+      for (const w of [...(wByCat ?? []), ...(wByMerchant ?? [])]) {
+        if (seen.has(w.id)) continue;
+        seen.add(w.id);
+        notifs.push({
+          id: `w-${w.id}`,
+          type: "withdrawal",
+          title: "Retiro sin detallar",
+          description: `${formatCOP(w.amount)} — ${w.merchant} · ${formatShortDate(w.transaction_date)}`,
+          url: "/transactions?filter=withdrawals",
+        });
       }
 
       // Savings goal not set

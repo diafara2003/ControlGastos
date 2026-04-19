@@ -8,9 +8,10 @@ import { getTransactions } from "@/src/entities/transaction";
 import { createClient } from "@/src/shared/api/supabase/client";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
-import { Spinner } from "@/src/shared/ui/spinner";
+
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
+import { WithdrawalAlert } from "@/src/features/withdrawal-details/ui/WithdrawalAlert";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const HISTORY_MONTHS = 3;
@@ -241,9 +242,35 @@ export function DashboardPage() {
 
       <div className="space-y-5 mt-4">
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3">
-          <Spinner className="h-8 w-8" />
-          <p className="text-sm text-gray-400">Cargando datos...</p>
+        <div className="animate-pulse space-y-4">
+          {/* MonthPulse skeleton */}
+          <div className="rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div className="h-3 w-24 bg-gray-200 rounded" />
+            <div className="h-8 w-48 bg-gray-200 rounded" />
+            <div className="h-3 w-36 bg-gray-100 rounded" />
+            <div className="h-16 w-full bg-gray-100 rounded-xl mt-3" />
+          </div>
+          {/* SavingsGoal skeleton */}
+          <div className="rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div className="h-3 w-28 bg-gray-200 rounded" />
+            <div className="h-6 w-36 bg-gray-200 rounded" />
+            <div className="h-2 w-full bg-gray-100 rounded-full" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-16 bg-gray-100 rounded-xl" />
+              <div className="h-16 bg-gray-100 rounded-xl" />
+            </div>
+          </div>
+          {/* CategoryAlerts skeleton */}
+          <div className="rounded-2xl border border-gray-200 p-5 space-y-3">
+            <div className="h-3 w-40 bg-gray-200 rounded" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 bg-gray-200 rounded-lg" />
+                <div className="h-4 w-24 bg-gray-200 rounded" />
+              </div>
+              <div className="h-4 w-20 bg-gray-200 rounded" />
+            </div>
+          </div>
         </div>
       ) : !hasData ? (
         <div className="flex flex-col items-center justify-center py-20 gap-2 text-center px-6">
@@ -282,6 +309,7 @@ export function DashboardPage() {
         </div>
       )}
       </div>
+      <WithdrawalAlert />
     </div>
   );
 }

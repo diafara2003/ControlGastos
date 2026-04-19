@@ -50,7 +50,30 @@ export function Sidebar() {
         // Load notifications
         const loadNotifs = async () => {
           const notifs: SidebarNotification[] = [];
-          const { data: withdrawals } = await supabase
+          // Get Retiro cajero category ID
+          const { data: retiroCat } = await supabase
+            .from("categories")
+            .select("id")
+            .eq("user_id", u.id)
+            .in("name", ["Retiro cajero", "Efectivo"]);
+
+          const retiroCatIds = retiroCat?.map((c) => c.id) ?? [];
+          console.log("[Sidebar notifs] user:", u.id, "retiroCatIds:", retiroCatIds);
+
+          // Find unresolved withdrawals by category OR merchant keywords
+          const { data: byCategory } = retiroCatIds.length > 0
+            ? await supabase
+                .from("transactions")
+                .select("id, amount, merchant, transaction_date")
+                .eq("user_id", u.id)
+                .eq("type", "expense")
+                .eq("withdrawal_resolved", false)
+                .in("category_id", retiroCatIds)
+                .order("transaction_date", { ascending: false })
+                .limit(5)
+            : { data: [] };
+
+          const { data: byMerchant } = await supabase
             .from("transactions")
             .select("id, amount, merchant, transaction_date")
             .eq("user_id", u.id)
@@ -60,16 +83,23 @@ export function Sidebar() {
             .order("transaction_date", { ascending: false })
             .limit(5);
 
-          if (withdrawals) {
-            for (const w of withdrawals) {
-              notifs.push({
-                id: `w-${w.id}`,
-                type: "withdrawal",
-                title: "Retiro sin detallar",
-                description: `${formatCOP(w.amount)} — ${formatShortDate(w.transaction_date)}`,
-                href: "/transactions?filter=withdrawals",
-              });
-            }
+          console.log("[Sidebar notifs] byCategory:", byCategory?.length, "byMerchant:", byMerchant?.length);
+          // Merge and deduplicate
+          const seen = new Set<string>();
+          const allWithdrawals = [...(byCategory ?? []), ...(byMerchant ?? [])].filter((w) => {
+            if (seen.has(w.id)) return false;
+            seen.add(w.id);
+            return true;
+          });
+
+          for (const w of allWithdrawals) {
+            notifs.push({
+              id: `w-${w.id}`,
+              type: "withdrawal",
+              title: "Retiro sin detallar",
+              description: `${formatCOP(w.amount)} — ${formatShortDate(w.transaction_date)}`,
+              href: "/transactions?filter=withdrawals",
+            });
           }
 
           const { data: profile } = await supabase
@@ -108,15 +138,64 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-60 flex-col border-r border-gray-100 z-40 sidebar-bg">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-5 pt-6 pb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-lg shadow-sm">
-          <Wallet className="h-5 w-5 text-white" />
+      {/* Logo + Bell */}
+      <div className="flex items-center justify-between px-5 pt-6 pb-4">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white text-lg shadow-sm">
+            <Wallet className="h-5 w-5 text-white" />
+          </div>
+          <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
+            {APP_NAME}
+          </span>
         </div>
-        <span className="text-lg font-bold text-gray-900 dark:text-white tracking-tight">
-          {APP_NAME}
-        </span>
+        <button
+          onClick={() => setBellOpen(!bellOpen)}
+          className="relative flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <Bell className="h-[18px] w-[18px] text-gray-400" />
+          {notifications.length > 0 && (
+            <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-[9px] font-bold text-white">
+              {notifications.length}
+            </span>
+          )}
+        </button>
       </div>
+
+      {/* Notification dropdown */}
+      {bellOpen && (
+        <div className="mx-3 mb-3 rounded-xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+          {notifications.length === 0 ? (
+            <div className="px-3 py-4 text-center">
+              <p className="text-xs text-gray-400">Todo al dia</p>
+            </div>
+          ) : (
+            <div className="max-h-48 overflow-y-auto">
+              {notifications.map((n) => (
+                <Link
+                  key={n.id}
+                  href={n.href}
+                  onClick={() => setBellOpen(false)}
+                  className="flex items-start gap-2.5 w-full px-3 py-2.5 text-left transition-colors hover:bg-gray-50 border-b border-gray-50 last:border-0"
+                >
+                  <div className={`flex h-6 w-6 items-center justify-center rounded-md shrink-0 mt-0.5 ${
+                    n.type === "withdrawal" ? "bg-amber-50" : "bg-violet-50"
+                  }`}>
+                    {n.type === "withdrawal" ? (
+                      <Banknote className="h-3 w-3 text-amber-600" />
+                    ) : (
+                      <PiggyBank className="h-3 w-3 text-violet-600" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-gray-700">{n.title}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{n.description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* User info */}
       {user && (
@@ -175,50 +254,6 @@ export function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Notifications */}
-      {notifications.length > 0 && (
-        <div className="px-3 mb-2">
-          <button
-            onClick={() => setBellOpen(!bellOpen)}
-            className="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-gray-500 hover:bg-amber-50 hover:text-amber-700 transition-all"
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="h-5 w-5 text-gray-400" />
-              Notificaciones
-            </div>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-white">
-              {notifications.length}
-            </span>
-          </button>
-          {bellOpen && (
-            <div className="mt-1 space-y-1">
-              {notifications.map((n) => (
-                <Link
-                  key={n.id}
-                  href={n.href}
-                  onClick={() => setBellOpen(false)}
-                  className="flex items-start gap-2 rounded-lg px-3 py-2 hover:bg-gray-50 transition-colors"
-                >
-                  <div className={`flex h-6 w-6 items-center justify-center rounded-md shrink-0 mt-0.5 ${
-                    n.type === "withdrawal" ? "bg-amber-50" : "bg-violet-50"
-                  }`}>
-                    {n.type === "withdrawal" ? (
-                      <Banknote className="h-3 w-3 text-amber-600" />
-                    ) : (
-                      <PiggyBank className="h-3 w-3 text-violet-600" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-gray-700">{n.title}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{n.description}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Logout */}
       <div className="px-3 pb-5">
