@@ -75,42 +75,45 @@ export function TransactionsPage() {
   }, [loadData]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">Movimientos</h1>
-        <div className="flex items-center gap-2">
-          <ExportButton />
-          <Button size="sm" onClick={() => setShowAddForm(true)}>
-            <Plus className="h-3.5 w-3.5" />
-            Agregar
-          </Button>
+    <div>
+      {/* Sticky header with search and filters */}
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 pb-3 space-y-3 md:top-0 -mx-4 px-4 md:-mx-8 md:px-8 pt-1 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold text-gray-900">Movimientos</h1>
+          <div className="flex items-center gap-2">
+            <ExportButton />
+            <Button size="sm" onClick={() => setShowAddForm(true)}>
+              <Plus className="h-3.5 w-3.5" />
+              Agregar
+            </Button>
+          </div>
         </div>
+
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            placeholder="Buscar comercio, descripción..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
+        {!searchQuery && (
+          <TransactionFilters
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onCategoryChange={setSelectedCategory}
+            selectedType={selectedType}
+            onTypeChange={setSelectedType}
+            cards={cards}
+            selectedCard={selectedCard}
+            onCardChange={setSelectedCard}
+          />
+        )}
       </div>
 
-      {/* Search bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <Input
-          placeholder="Buscar comercio, descripción..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
-
-      {!searchQuery && (
-        <TransactionFilters
-          categories={categories}
-          selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          selectedType={selectedType}
-          onTypeChange={setSelectedType}
-          cards={cards}
-          selectedCard={selectedCard}
-          onCardChange={setSelectedCard}
-        />
-      )}
-
+      <div className="mt-4">
       <TransactionList
         transactions={transactions}
         loading={loading}
@@ -135,6 +138,7 @@ export function TransactionsPage() {
         onOpenChange={setShowAddForm}
         onAdded={loadData}
       />
+      </div>
     </div>
   );
 }
