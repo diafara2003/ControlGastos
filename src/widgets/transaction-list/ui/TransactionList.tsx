@@ -121,27 +121,9 @@ export function TransactionList({
                       {wkBalance >= 0 ? "+" : ""}{formatCOP(wkBalance)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4 mt-1.5">
-                    {weekendSummary.expenses > 0 && (
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Gastos</p>
-                        <p className="text-xs font-semibold text-rose-600 tabular-nums">
-                          -{formatCOP(weekendSummary.expenses)}
-                        </p>
-                      </div>
-                    )}
-                    {weekendSummary.income > 0 && (
-                      <div>
-                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Ingresos</p>
-                        <p className="text-xs font-semibold text-emerald-600 tabular-nums">
-                          +{formatCOP(weekendSummary.income)}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                  {overspent && (
-                    <p className="text-[11px] font-medium text-rose-600 mt-1.5">
-                      Gastaste {formatCOP(weekendSummary.expenses - weekendSummary.income)} más de lo que ingresaste
+                  {isNegative && (
+                    <p className="text-[11px] font-medium text-rose-600 mt-1">
+                      Gastaste {formatCOP(weekendSummary.expenses)}
                     </p>
                   )}
                 </div>
