@@ -128,8 +128,16 @@ export function CreditCardSetupModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40">
-      <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-5 max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
+    <div className="fixed inset-0 z-50 flex items-center justify-center sm:bg-black/40">
+      <div className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md bg-white sm:rounded-2xl p-5 flex flex-col overflow-y-auto animate-in slide-in-from-bottom duration-300">
+        {/* Close button */}
+        <button
+          onClick={onComplete}
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+        >
+          <X className="h-4 w-4 text-gray-600" />
+        </button>
+
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50">
