@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { getTransactions } from "@/src/entities/transaction";
+import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
+import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName, formatShortDate } from "@/src/shared/lib/date";
 import { formatCOP } from "@/src/shared/lib/currency";
@@ -69,6 +71,7 @@ export function ReportsPage() {
   const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
+  const { selectedAccount } = useAccountFilter();
 
   const isCurrentMonth =
     selectedDate.getMonth() === new Date().getMonth() &&
@@ -127,14 +130,23 @@ export function ReportsPage() {
     return () => window.removeEventListener("transactions-updated", handler);
   }, [load]);
 
+  const filteredTxns = useMemo(
+    () => filterByAccount(transactions, selectedAccount),
+    [transactions, selectedAccount]
+  );
+  const filteredPrevTxns = useMemo(
+    () => filterByAccount(prevTransactions, selectedAccount),
+    [prevTransactions, selectedAccount]
+  );
+
   // ---- Derived data ----
   const income = useMemo(
-    () => transactions.filter((t) => t.type === "income"),
-    [transactions]
+    () => filteredTxns.filter((t) => t.type === "income"),
+    [filteredTxns]
   );
   const expenses = useMemo(
-    () => transactions.filter((t) => t.type === "expense"),
-    [transactions]
+    () => filteredTxns.filter((t) => t.type === "expense"),
+    [filteredTxns]
   );
 
   const totalIncome = useMemo(
@@ -152,17 +164,17 @@ export function ReportsPage() {
   // Previous month totals
   const prevIncome = useMemo(
     () =>
-      prevTransactions
+      filteredPrevTxns
         .filter((t) => t.type === "income")
         .reduce((s, t) => s + t.amount, 0),
-    [prevTransactions]
+    [filteredPrevTxns]
   );
   const prevExpenses = useMemo(
     () =>
-      prevTransactions
+      filteredPrevTxns
         .filter((t) => t.type === "expense")
         .reduce((s, t) => s + t.amount, 0),
-    [prevTransactions]
+    [filteredPrevTxns]
   );
 
   // Top 5 expenses
@@ -238,7 +250,9 @@ export function ReportsPage() {
   return (
     <div className="pb-2">
       {/* Month navigation - sticky */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 flex items-center justify-between">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 space-y-2">
+        <AccountFilterToggle />
+        <div className="flex items-center justify-between">
         <Button
           variant="ghost"
           size="icon"
@@ -260,6 +274,7 @@ export function ReportsPage() {
         >
           <ChevronRight className="h-5 w-5" />
         </Button>
+        </div>
       </div>
 
       <div className="space-y-5 mt-4">

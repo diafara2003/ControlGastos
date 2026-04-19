@@ -25,8 +25,13 @@ import {
   Moon,
   Download,
   CreditCard,
+  Landmark,
+  ChevronRight,
 } from "lucide-react";
 import { CreditCardSetupModal } from "@/src/features/credit-card-setup";
+import { getBankBrand } from "@/src/shared/config/bank-brands";
+import { Select } from "@/src/shared/ui/select";
+import { Input } from "@/src/shared/ui/input";
 
 function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -67,6 +72,13 @@ export function SettingsPage() {
   } | null>(null);
   const [userCards, setUserCards] = useState<{ bank_name: string; product_type: string }[]>([]);
   const [showCardModal, setShowCardModal] = useState(false);
+  const [bankAccountsOpen, setBankAccountsOpen] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState<{
+    id: string; identifier: string; bank_name: string;
+    account_type: string; is_tracked: boolean;
+    track_expenses: boolean; track_income: boolean; label: string | null;
+  }[]>([]);
+  const [savingBanks, setSavingBanks] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     const supabase = createClient();
@@ -81,7 +93,7 @@ export function SettingsPage() {
       });
     }
 
-    const [{ data }, { data: cards }] = await Promise.all([
+    const [{ data }, { data: cards }, { data: banks }] = await Promise.all([
       supabase
         .from("email_accounts")
         .select("*")
@@ -90,9 +102,14 @@ export function SettingsPage() {
         .from("user_credit_cards")
         .select("bank_name, product_type")
         .order("bank_name"),
+      supabase
+        .from("bank_accounts")
+        .select("*")
+        .order("created_at"),
     ]);
     if (data) setEmailAccounts(data as EmailAccount[]);
     if (cards) setUserCards(cards);
+    if (banks) setBankAccounts(banks);
     setLoadingAccounts(false);
   }, []);
 
@@ -329,6 +346,146 @@ export function SettingsPage() {
         }}
       />
 
+      {/* Bank accounts - accordion */}
+      {bankAccounts.length > 0 && (
+        <Card>
+          <button
+            onClick={() => setBankAccountsOpen(!bankAccountsOpen)}
+            className="w-full flex items-center justify-between p-4"
+          >
+            <div className="flex items-center gap-2">
+              <Landmark className="h-5 w-5 text-gray-700" />
+              <span className="text-sm font-semibold text-gray-900">Cuentas bancarias</span>
+              <span className="text-[10px] text-gray-400">({bankAccounts.length})</span>
+            </div>
+            <ChevronRight className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${bankAccountsOpen ? "rotate-90" : ""}`} />
+          </button>
+          {bankAccountsOpen && (
+          <CardContent className="space-y-3 pt-0">
+            {bankAccounts.map((acc) => {
+              const brand = getBankBrand(acc.bank_name);
+              return (
+                <div key={acc.id} className="rounded-lg border border-gray-200 p-3 space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
+                      style={{ backgroundColor: brand.bgColor, color: brand.textColor }}
+                    >
+                      {brand.initials}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900">
+                        *{acc.identifier}
+                        <span className="text-xs text-gray-400 font-normal ml-1.5">
+                          {brand.name}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] text-gray-500">Nombre</label>
+                      <Input
+                        value={acc.label ?? ""}
+                        onChange={(e) =>
+                          setBankAccounts((prev) =>
+                            prev.map((a) => a.id === acc.id ? { ...a, label: e.target.value } : a)
+                          )
+                        }
+                        placeholder="Ej: Cuenta principal"
+                        className="text-sm h-8"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] text-gray-500">Tipo</label>
+                      <Select
+                        value={acc.account_type}
+                        onChange={(e) =>
+                          setBankAccounts((prev) =>
+                            prev.map((a) => a.id === acc.id ? { ...a, account_type: e.target.value } : a)
+                          )
+                        }
+                        className="text-sm h-8"
+                      >
+                        <option value="savings">Ahorros</option>
+                        <option value="credit">Crédito</option>
+                        <option value="other">Otra</option>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={acc.is_tracked}
+                        onChange={(e) =>
+                          setBankAccounts((prev) =>
+                            prev.map((a) => a.id === acc.id ? { ...a, is_tracked: e.target.checked } : a)
+                          )
+                        }
+                        className="h-3.5 w-3.5 rounded border-gray-300 text-violet-600"
+                      />
+                      <span className="text-xs text-gray-700">Incluir en indicadores</span>
+                    </label>
+                    {acc.is_tracked && (
+                      <div className="ml-5 flex gap-4">
+                        <label className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            checked={acc.track_expenses}
+                            onChange={(e) =>
+                              setBankAccounts((prev) =>
+                                prev.map((a) => a.id === acc.id ? { ...a, track_expenses: e.target.checked } : a)
+                              )
+                            }
+                            className="h-3 w-3 rounded border-gray-300 text-rose-500"
+                          />
+                          <span className="text-[11px] text-gray-600">Gastos</span>
+                        </label>
+                        <label className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            checked={acc.track_income}
+                            onChange={(e) =>
+                              setBankAccounts((prev) =>
+                                prev.map((a) => a.id === acc.id ? { ...a, track_income: e.target.checked } : a)
+                              )
+                            }
+                            className="h-3 w-3 rounded border-gray-300 text-emerald-500"
+                          />
+                          <span className="text-[11px] text-gray-600">Ingresos</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            <Button
+              onClick={async () => {
+                setSavingBanks(true);
+                const supabase = createClient();
+                for (const acc of bankAccounts) {
+                  await supabase.from("bank_accounts").update({
+                    label: acc.label || `Cuenta *${acc.identifier}`,
+                    account_type: acc.account_type,
+                    is_tracked: acc.is_tracked,
+                    track_expenses: acc.track_expenses,
+                    track_income: acc.track_income,
+                  }).eq("id", acc.id);
+                }
+                setSavingBanks(false);
+              }}
+              disabled={savingBanks}
+              className="w-full"
+            >
+              {savingBanks ? "Guardando..." : "Guardar cambios"}
+            </Button>
+          </CardContent>
+          )}
+        </Card>
+      )}
+
       {/* Manual sync */}
       {emailAccounts.length > 0 && (
         <Card>
@@ -340,8 +497,8 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-500">
-              Los correos se sincronizan automáticamente cada 5 segundos mientras
-              la app está abierta. También puedes forzar una sincronización.
+              Los correos se sincronizan al abrir la app y cuando vuelves a ella.
+              También puedes forzar una sincronización manual.
             </p>
             <Button
               onClick={handleSync}

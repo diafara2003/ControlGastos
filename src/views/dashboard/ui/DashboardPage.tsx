@@ -9,12 +9,15 @@ import { createClient } from "@/src/shared/api/supabase/client";
 import type { Transaction } from "@/src/entities/transaction";
 import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
 import { Spinner } from "@/src/shared/ui/spinner";
+import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
+import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const HISTORY_MONTHS = 3;
 const ALERT_THRESHOLD = 1.15; // 15% over historical average
 
 export function DashboardPage() {
+  const { selectedAccount } = useAccountFilter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totals, setTotals] = useState({ income: 0, expenses: 0 });
@@ -87,60 +90,15 @@ export function DashboardPage() {
 
       setTransactions(txns);
 
-      // Load bank accounts to filter tracked transactions
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      let untrackedIds: Set<string> | null = null;
-      if (authUser) {
-        const { data: bankAccounts } = await supabase
-          .from("bank_accounts")
-          .select("id, identifier, is_tracked, track_expenses, track_income")
-          .eq("user_id", authUser.id);
-
-        if (bankAccounts && bankAccounts.length > 0) {
-          untrackedIds = new Set<string>();
-          const noExpenseIds = new Set<string>();
-          const noIncomeIds = new Set<string>();
-          for (const ba of bankAccounts) {
-            if (!ba.is_tracked) untrackedIds.add(ba.identifier);
-            if (!ba.track_expenses) noExpenseIds.add(ba.identifier);
-            if (!ba.track_income) noIncomeIds.add(ba.identifier);
-          }
-
-          // Filter for totals: exclude untracked, respect per-type tracking
-          const trackedTxns = txns.filter((t) => {
-            const card = t.card_last_four;
-            if (!card) return true; // no card = assumed tracked
-            if (untrackedIds!.has(card)) return false;
-            if (t.type === "expense" && noExpenseIds.has(card)) return false;
-            if (t.type === "income" && noIncomeIds.has(card)) return false;
-            return true;
-          });
-
-          const income = trackedTxns
-            .filter((t) => t.type === "income")
-            .reduce((sum, t) => sum + t.amount, 0);
-          const expenses = trackedTxns
-            .filter((t) => t.type === "expense")
-            .reduce((sum, t) => sum + t.amount, 0);
-          setTotals({ income, expenses });
-        } else {
-          const income = txns
-            .filter((t) => t.type === "income")
-            .reduce((sum, t) => sum + t.amount, 0);
-          const expenses = txns
-            .filter((t) => t.type === "expense")
-            .reduce((sum, t) => sum + t.amount, 0);
-          setTotals({ income, expenses });
-        }
-      } else {
-        const income = txns
-          .filter((t) => t.type === "income")
-          .reduce((sum, t) => sum + t.amount, 0);
-        const expenses = txns
-          .filter((t) => t.type === "expense")
-          .reduce((sum, t) => sum + t.amount, 0);
-        setTotals({ income, expenses });
-      }
+      // Filter by account selection
+      const filtered = filterByAccount(txns, selectedAccount);
+      const income = filtered
+        .filter((t) => t.type === "income")
+        .reduce((sum, t) => sum + t.amount, 0);
+      const expenses = filtered
+        .filter((t) => t.type === "expense")
+        .reduce((sum, t) => sum + t.amount, 0);
+      setTotals({ income, expenses });
 
       // Compare vs last month up to the same day
       const now = new Date();
@@ -237,7 +195,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, isCurrentMonth]);
+  }, [selectedDate, isCurrentMonth, selectedAccount]);
 
   useEffect(() => {
     load();
@@ -256,7 +214,9 @@ export function DashboardPage() {
 
   return (
     <div className="pb-4">
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 flex items-center justify-center gap-6">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 space-y-2">
+        <AccountFilterToggle />
+        <div className="flex items-center justify-center gap-6">
         <button
           onClick={goToPreviousMonth}
           className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100"
@@ -276,6 +236,7 @@ export function DashboardPage() {
         >
           <ChevronRight className="h-5 w-5" />
         </button>
+        </div>
       </div>
 
       <div className="space-y-5 mt-4">

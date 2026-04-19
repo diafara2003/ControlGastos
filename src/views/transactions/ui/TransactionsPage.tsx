@@ -15,6 +15,8 @@ import { ExportButton } from "@/src/features/export-csv";
 import { Input } from "@/src/shared/ui/input";
 import { Button } from "@/src/shared/ui/button";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
+import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import { Search, Plus } from "lucide-react";
 
 export function TransactionsPage() {
@@ -30,8 +32,7 @@ export function TransactionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [accountFilter, setAccountFilter] = useState<"all" | "tracked" | "untracked">("all");
-  const [untrackedCards, setUntrackedCards] = useState<Set<string>>(new Set());
+  const { selectedAccount } = useAccountFilter();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -69,23 +70,6 @@ export function TransactionsPage() {
     return () => clearTimeout(timer);
   }, [loadData, searchQuery]);
 
-  // Load bank accounts for filtering
-  useEffect(() => {
-    const loadBankAccounts = async () => {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data } = await supabase
-        .from("bank_accounts")
-        .select("identifier, is_tracked")
-        .eq("user_id", user.id);
-      if (data) {
-        setUntrackedCards(new Set(data.filter((a) => !a.is_tracked).map((a) => a.identifier)));
-      }
-    };
-    loadBankAccounts();
-  }, []);
-
   // Auto-refresh when new transactions are synced
   useEffect(() => {
     const handler = () => loadData();
@@ -93,13 +77,7 @@ export function TransactionsPage() {
     return () => window.removeEventListener("transactions-updated", handler);
   }, [loadData]);
 
-  const filteredTransactions = transactions.filter((t) => {
-    if (accountFilter === "all") return true;
-    const isUntracked = t.card_last_four ? untrackedCards.has(t.card_last_four) : false;
-    return accountFilter === "tracked" ? !isUntracked : isUntracked;
-  });
-
-  const hasMultipleAccounts = untrackedCards.size > 0;
+  const filteredTransactions = filterByAccount(transactions, selectedAccount);
 
   return (
     <div>
@@ -126,23 +104,7 @@ export function TransactionsPage() {
           />
         </div>
 
-        {hasMultipleAccounts && (
-          <div className="flex gap-1 bg-gray-100 rounded-lg p-0.5">
-            {(["all", "tracked", "untracked"] as const).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setAccountFilter(filter)}
-                className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${
-                  accountFilter === filter
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500"
-                }`}
-              >
-                {filter === "all" ? "Todas" : filter === "tracked" ? "Principal" : "Otras"}
-              </button>
-            ))}
-          </div>
-        )}
+        <AccountFilterToggle />
 
         {!searchQuery && (
           <TransactionFilters
