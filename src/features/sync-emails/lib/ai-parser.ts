@@ -3,7 +3,7 @@ import type { FetchedEmail } from "./gmail";
 import type { ParsedTransaction } from "./patterns";
 
 const SYSTEM_PROMPT = `Eres un parser de notificaciones bancarias colombianas.
-Dado un email, determina si contiene una transacción financiera real (compra, pago, transferencia, retiro, consignación, nómina, etc.).
+Dado un email, determina si contiene una transacción financiera real (compra, pago, transferencia, retiro, consignación, nómina, extracto con valor a pagar, etc.).
 
 Si el correo NO es una transacción financiera (es publicidad, información general, promociones, alertas de seguridad sin monto, etc.), responde:
 {"error": "no_transaction"}
@@ -42,7 +42,8 @@ Reglas:
 - "retiraste", "retiro" → type = "expense", categoría = "Efectivo"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
-- transactionDate debe extraerse del cuerpo del correo, no del header`;
+- transactionDate debe extraerse del cuerpo del correo, no del header
+- Extractos de tarjeta de crédito o servicios (Addi, Nu, etc.) con "total a pagar", "saldo a pagar" o "valor de tu cuota" → type = "expense", merchant = nombre del servicio (ej: "Addi", "Nu"), categoría = "Otros", amount = el total/cuota a pagar`;
 
 export interface AIParseResult extends ParsedTransaction {
   categoryName: string;

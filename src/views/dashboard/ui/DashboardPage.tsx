@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { SpendingChart } from "@/src/widgets/spending-chart";
+import { DailyAverage } from "@/src/widgets/daily-average";
 import { CategoryBreakdown } from "@/src/widgets/category-breakdown";
 import { RecentTransactions } from "@/src/widgets/recent-transactions";
 import { MonthlyTrend } from "@/src/widgets/monthly-trend";
@@ -148,6 +149,12 @@ export function DashboardPage() {
           <SpendingChart
             totalExpenses={totals.expenses}
             totalIncome={totals.income}
+            selectedDate={selectedDate}
+          />
+
+          {/* Daily average */}
+          <DailyAverage
+            totalExpenses={totals.expenses}
             selectedDate={selectedDate}
           />
 
