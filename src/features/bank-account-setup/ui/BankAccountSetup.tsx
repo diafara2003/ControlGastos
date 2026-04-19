@@ -256,6 +256,20 @@ export function BankAccountSetup() {
                 </span>
               </div>
 
+              {/* AI suggestion */}
+              {acc.label && (
+                <div className="flex items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1.5">
+                  <span className="text-[10px] text-violet-500">Sugerencia:</span>
+                  <span className="text-[11px] font-medium text-violet-700">{acc.label}</span>
+                </div>
+              )}
+              {acc.sameBankGroup && (
+                <div className="flex items-center gap-1.5 rounded-lg bg-amber-50 px-2.5 py-1.5">
+                  <span className="text-[10px] text-amber-500">Info:</span>
+                  <span className="text-[11px] font-medium text-amber-700">{acc.sameBankGroup}</span>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="text-[11px] text-gray-500">Nombre</label>
