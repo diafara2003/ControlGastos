@@ -31,7 +31,8 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Salud (farmacias, EPS, hospitales, médicos)
 - Entretenimiento (cine, teatro, boletas, juegos, Steam)
 - Educación (universidad, Platzi, Coursera, colegios)
-- Efectivo (retiros de cajero)
+- Efectivo (pagos en efectivo, dinero en mano)
+- Retiro cajero (retiros en cajeros automáticos, ATM, Servibanca, cajero red)
 - Transferencias (transferencias enviadas a personas)
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)
@@ -41,7 +42,7 @@ Reglas:
 - "compraste", "compra", "pago en", "pagaste" → type = "expense"
 - "transferiste", "enviaste" → type = "expense", categoría = "Transferencias"
 - "te enviaron", "recibiste", "abono", "consignación", "nómina" → type = "income"
-- "retiraste", "retiro" → type = "expense", categoría = "Efectivo"
+- "retiraste", "retiro", "cajero", "ATM", "Servibanca" → type = "expense", categoría = "Retiro cajero"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
 - description debe ser útil y descriptiva (ej: "Compra en supermercado con débito *1036", "Pago de nómina SINCOSOFT", "Retiro cajero Servibanca"). NO repetir el asunto del correo ni poner "Alertas y Notificaciones"

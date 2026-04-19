@@ -10,6 +10,7 @@ export const DEFAULT_CATEGORIES = [
   { name: "Entretenimiento", icon: "gamepad-2", color: "#F97316" },
   { name: "Educación", icon: "graduation-cap", color: "#06B6D4" },
   { name: "Efectivo", icon: "banknote", color: "#84CC16" },
+  { name: "Retiro cajero", icon: "landmark", color: "#78716C" },
   { name: "Ingresos", icon: "trending-up", color: "#22C55E" },
   { name: "Otros", icon: "package", color: "#9CA3AF" },
 ] as const;

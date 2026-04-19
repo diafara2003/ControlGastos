@@ -29,7 +29,7 @@ export function WithdrawalAlert() {
         .eq("user_id", user.id)
         .eq("type", "expense")
         .eq("withdrawal_resolved", false)
-        .or("merchant.ilike.%cajero%,merchant.ilike.%retiro%,merchant.ilike.%atm%")
+        .or("merchant.ilike.%cajero%,merchant.ilike.%retiro%,merchant.ilike.%atm%,merchant.ilike.%servibanca%")
         .order("transaction_date", { ascending: false })
         .limit(5);
 

@@ -127,8 +127,9 @@ export function TransactionsPage() {
         transactions={filteredTransactions}
         loading={loading}
         onTransactionClick={(t) => {
-          const isWithdrawal = t.category?.name === "Efectivo" ||
-            /cajero|retiro|atm/i.test(t.merchant);
+          const isWithdrawal = t.category?.name === "Retiro cajero" ||
+            t.category?.name === "Efectivo" ||
+            /cajero|retiro|atm|servibanca/i.test(t.merchant);
           if (isWithdrawal) {
             setWithdrawalTx(t);
           } else {
