@@ -14,6 +14,9 @@ import {
   DollarSign,
   PiggyBank,
   Receipt,
+  Banknote,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { getTransactions } from "@/src/entities/transaction";
@@ -224,6 +227,22 @@ export function ReportsPage() {
     }
     return map;
   }, [expenses]);
+
+  // Withdrawals
+  const withdrawals = useMemo(
+    () =>
+      filteredTxns.filter(
+        (t) =>
+          t.type === "expense" &&
+          (t.category?.name === "Retiro cajero" ||
+            t.category?.name === "Efectivo" ||
+            /cajero|retiro|atm|servibanca/i.test(t.merchant))
+      ),
+    [filteredTxns]
+  );
+  const totalWithdrawals = withdrawals.reduce((s, t) => s + t.amount, 0);
+  const resolvedWithdrawals = withdrawals.filter((t) => t.withdrawal_resolved);
+  const pendingWithdrawals = withdrawals.filter((t) => !t.withdrawal_resolved);
 
   // Most frequent merchants (expenses only)
   const topMerchants: MerchantFrequency[] = useMemo(() => {
@@ -569,6 +588,78 @@ export function ReportsPage() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ============================================================
+              6. Retiros en cajero
+              ============================================================ */}
+          {withdrawals.length > 0 && (
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-4 w-4 text-amber-600" />
+                  Retiros en cajero
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Total</p>
+                    <p className="text-sm font-bold text-gray-900 tabular-nums">
+                      {formatCOP(totalWithdrawals)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Retiros</p>
+                    <p className="text-sm font-bold text-gray-900">{withdrawals.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wider">Detallados</p>
+                    <p className={`text-sm font-bold ${resolvedWithdrawals.length === withdrawals.length ? "text-emerald-600" : "text-amber-600"}`}>
+                      {resolvedWithdrawals.length}/{withdrawals.length}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {withdrawals.map((t) => (
+                    <div
+                      key={t.id}
+                      className="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {t.withdrawal_resolved ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm text-gray-800 truncate">{t.merchant}</p>
+                          <p className="text-[11px] text-gray-400">
+                            {formatShortDate(t.transaction_date)}
+                            {!t.withdrawal_resolved && (
+                              <span className="text-amber-500 ml-1">· sin detallar</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-semibold text-gray-900 tabular-nums whitespace-nowrap ml-3">
+                        {formatCOP(t.amount)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {pendingWithdrawals.length > 0 && (
+                  <a
+                    href="/transactions?filter=withdrawals"
+                    className="block text-center text-xs font-medium text-amber-600 pt-1"
+                  >
+                    Detallar retiros pendientes
+                  </a>
+                )}
               </CardContent>
             </Card>
           )}

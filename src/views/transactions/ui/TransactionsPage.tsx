@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   TransactionList,
   TransactionFilters,
@@ -18,9 +19,11 @@ import { Button } from "@/src/shared/ui/button";
 import { createClient } from "@/src/shared/api/supabase/client";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
-import { Search, Plus } from "lucide-react";
+import { Search, Plus, Banknote } from "lucide-react";
 
 export function TransactionsPage() {
+  const searchParams = useSearchParams();
+  const withdrawalFilter = searchParams.get("filter") === "withdrawals";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<string[]>([]);
@@ -79,7 +82,31 @@ export function TransactionsPage() {
     return () => window.removeEventListener("transactions-updated", handler);
   }, [loadData]);
 
-  const filteredTransactions = filterByAccount(transactions, selectedAccount);
+  const filteredTransactions = useMemo(() => {
+    let filtered = filterByAccount(transactions, selectedAccount);
+    if (withdrawalFilter) {
+      filtered = filtered.filter(
+        (t) =>
+          !t.withdrawal_resolved &&
+          (t.category?.name === "Retiro cajero" ||
+            t.category?.name === "Efectivo" ||
+            /cajero|retiro|atm|servibanca/i.test(t.merchant))
+      );
+    }
+    return filtered;
+  }, [transactions, selectedAccount, withdrawalFilter]);
+
+  const pendingWithdrawals = useMemo(
+    () =>
+      transactions.filter(
+        (t) =>
+          !t.withdrawal_resolved &&
+          (t.category?.name === "Retiro cajero" ||
+            t.category?.name === "Efectivo" ||
+            /cajero|retiro|atm|servibanca/i.test(t.merchant))
+      ),
+    [transactions]
+  );
 
   return (
     <div>
@@ -107,6 +134,33 @@ export function TransactionsPage() {
         </div>
 
         <AccountFilterToggle />
+
+        {pendingWithdrawals.length > 0 && !withdrawalFilter && (
+          <a
+            href="/transactions?filter=withdrawals"
+            className="flex items-center gap-2.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 transition-colors active:bg-amber-100"
+          >
+            <Banknote className="h-4 w-4 text-amber-600 shrink-0" />
+            <span className="text-xs font-medium text-amber-700 flex-1">
+              {pendingWithdrawals.length} retiro{pendingWithdrawals.length > 1 ? "s" : ""} sin detallar
+            </span>
+            <span className="text-[10px] text-amber-500">Ver</span>
+          </a>
+        )}
+
+        {withdrawalFilter && (
+          <div className="flex items-center justify-between rounded-lg bg-amber-50 border border-amber-200 px-3 py-2">
+            <div className="flex items-center gap-2">
+              <Banknote className="h-4 w-4 text-amber-600" />
+              <span className="text-xs font-medium text-amber-700">
+                Retiros pendientes de detallar
+              </span>
+            </div>
+            <a href="/transactions" className="text-[10px] text-amber-500 underline">
+              Ver todos
+            </a>
+          </div>
+        )}
 
         {!searchQuery && (
           <TransactionFilters

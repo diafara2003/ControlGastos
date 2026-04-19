@@ -12,6 +12,11 @@ interface TransactionCardProps {
 
 export function TransactionCard({ transaction, onClick }: TransactionCardProps) {
   const isIncome = transaction.type === "income";
+  const isWithdrawal =
+    transaction.category?.name === "Retiro cajero" ||
+    transaction.category?.name === "Efectivo" ||
+    /cajero|retiro|atm|servibanca/i.test(transaction.merchant);
+  const pendingDetails = isWithdrawal && !transaction.withdrawal_resolved;
 
   return (
     <button
@@ -43,11 +48,16 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
               sugerida
             </span>
           )}
+          {pendingDetails && (
+            <span className="ml-1 text-[9px] text-amber-600 font-medium bg-amber-50 px-1 py-0.5 rounded">
+              sin detallar
+            </span>
+          )}
         </p>
       </div>
       <span
         className={`text-sm font-semibold whitespace-nowrap tabular-nums ${
-          isIncome ? "text-emerald-600" : "text-gray-900"
+          isIncome ? "text-emerald-600" : pendingDetails ? "text-amber-600" : "text-gray-900"
         }`}
       >
         {formatTransactionAmount(transaction.amount, transaction.type)}
