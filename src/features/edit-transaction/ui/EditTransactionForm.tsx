@@ -54,17 +54,19 @@ export function EditTransactionForm({
       .eq("id", transaction.id);
 
     if (!error) {
-      // If category was changed, create a classification rule for learning
+      // Learn from category corrections (global pattern)
       if (categoryId && categoryId !== transaction.category_id) {
-        await supabase.from("classification_rules").upsert(
-          {
-            user_id: transaction.user_id,
-            pattern: transaction.merchant.toLowerCase(),
-            category_id: categoryId,
-            priority: 10,
-          },
-          { onConflict: "user_id,pattern,category_id" }
-        );
+        const newCategory = categories.find((c) => c.id === categoryId);
+        if (newCategory) {
+          await fetch("/api/learn-pattern", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              merchant: transaction.merchant,
+              categoryName: newCategory.name,
+            }),
+          }).catch(() => {});
+        }
       }
 
       onSaved();

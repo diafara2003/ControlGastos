@@ -38,6 +38,11 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
           {transaction.category && (
             <span className="text-gray-300"> · {transaction.category.name}</span>
           )}
+          {transaction.classification_method === "pattern" && (
+            <span className="ml-1 text-[9px] text-violet-500 font-medium bg-violet-50 px-1 py-0.5 rounded">
+              sugerida
+            </span>
+          )}
         </p>
       </div>
       <span

@@ -192,7 +192,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             description: result.parsed.description,
             category_id: categoryId,
             transaction_date: adjustPayrollDate(result.parsed, result.parsed.transactionDate).toISOString(),
-            classification_method: "ai",
+            classification_method: result.method === "pattern" ? "pattern" : "ai",
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,

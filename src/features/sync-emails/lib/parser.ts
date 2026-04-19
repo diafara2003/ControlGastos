@@ -6,7 +6,7 @@ export interface ParseResult {
   email: FetchedEmail;
   parsed: ParsedTransaction | null;
   categoryName: string | null;
-  method: "ai" | "failed";
+  method: "ai" | "pattern" | "failed";
 }
 
 /**
@@ -23,12 +23,12 @@ export async function parseEmails(emails: FetchedEmail[]): Promise<ParseResult[]
         try {
           const parsed = await parseWithAI(email);
           if (parsed) {
-            const { categoryName, ...transaction } = parsed;
+            const { categoryName, classificationMethod, ...transaction } = parsed;
             return {
               email,
               parsed: transaction,
               categoryName,
-              method: "ai",
+              method: classificationMethod ?? "ai",
             } as ParseResult;
           }
           return { email, parsed: null, categoryName: null, method: "failed" } as ParseResult;

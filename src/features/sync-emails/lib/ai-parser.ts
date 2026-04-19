@@ -1,4 +1,5 @@
 import { chatCompletion } from "@/src/shared/api/azure-openai";
+import { createServiceClient } from "@/src/shared/api/supabase/service";
 import type { FetchedEmail } from "./gmail";
 import type { ParsedTransaction } from "./patterns";
 
@@ -65,6 +66,40 @@ function toColombiaDate(aiDate: string | undefined, emailDate: string): Date {
 
 export interface AIParseResult extends ParsedTransaction {
   categoryName: string;
+  classificationMethod: "ai" | "pattern";
+}
+
+/**
+ * Check if a merchant matches a learned classification pattern.
+ * Returns the category name with highest confidence, or null.
+ */
+async function matchPattern(merchant: string): Promise<string | null> {
+  try {
+    const normalized = merchant.toLowerCase().trim();
+    if (normalized.length < 3) return null;
+
+    const supabase = createServiceClient();
+    const { data } = await supabase
+      .from("classification_patterns")
+      .select("merchant_pattern, category_name, confidence")
+      .gte("confidence", 0.5)
+      .order("confidence", { ascending: false });
+
+    if (!data || data.length === 0) return null;
+
+    for (const p of data) {
+      if (
+        normalized.includes(p.merchant_pattern) ||
+        p.merchant_pattern.includes(normalized)
+      ) {
+        return p.category_name;
+      }
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -99,6 +134,18 @@ ${email.bodyText.slice(0, 2000)}`;
       return null;
     }
 
+    let categoryName = parsed.categoryName || "Otros";
+    let classificationMethod: "ai" | "pattern" = "ai";
+
+    // If AI classified as "Otros", check learned patterns
+    if (categoryName === "Otros") {
+      const patternMatch = await matchPattern(parsed.merchant);
+      if (patternMatch) {
+        categoryName = patternMatch;
+        classificationMethod = "pattern";
+      }
+    }
+
     return {
       type: parsed.type,
       amount: Math.round(parsed.amount),
@@ -106,7 +153,8 @@ ${email.bodyText.slice(0, 2000)}`;
       description: parsed.description || null,
       transactionDate: toColombiaDate(parsed.transactionDate, email.date),
       cardLastFour: parsed.cardLastFour || null,
-      categoryName: parsed.categoryName || "Otros",
+      categoryName,
+      classificationMethod,
     };
   } catch (err) {
     console.error("AI parsing failed:", err);

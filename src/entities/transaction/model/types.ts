@@ -1,6 +1,6 @@
 export type TransactionType = "expense" | "income";
 
-export type ClassificationMethod = "rule" | "ai" | "manual" | "builtin";
+export type ClassificationMethod = "rule" | "ai" | "manual" | "builtin" | "pattern";
 
 export interface Transaction {
   id: string;
