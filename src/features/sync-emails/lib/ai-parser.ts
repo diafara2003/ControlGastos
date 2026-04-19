@@ -69,6 +69,80 @@ function toColombiaDate(aiDate: string | undefined, emailDate: string): Date {
 export interface AIParseResult extends ParsedTransaction {
   categoryName: string;
   classificationMethod: "ai" | "pattern";
+  excludeFromTotals: boolean;
+}
+
+interface UserRuleMatch {
+  category: string;
+  includeInExpenses: boolean;
+  includeInIncome: boolean;
+}
+
+/**
+ * Check user-specific rules first (per-user RAG).
+ * These take highest priority.
+ */
+async function matchUserRule(
+  merchant: string,
+  userId: string
+): Promise<UserRuleMatch | null> {
+  try {
+    const normalized = merchant.toLowerCase().trim();
+    if (normalized.length < 3) return null;
+
+    const supabase = createServiceClient();
+
+    // Step 1: Text match on user rules
+    const { data } = await supabase
+      .from("user_rules")
+      .select("merchant_pattern, category_name, include_in_expenses, include_in_income")
+      .eq("user_id", userId);
+
+    if (data) {
+      for (const r of data) {
+        if (
+          normalized.includes(r.merchant_pattern) ||
+          r.merchant_pattern.includes(normalized)
+        ) {
+          console.log(`User rule match (text): "${normalized}" → ${r.category_name}`);
+          return {
+            category: r.category_name,
+            includeInExpenses: r.include_in_expenses,
+            includeInIncome: r.include_in_income,
+          };
+        }
+      }
+    }
+
+    // Step 2: Semantic match via embedding
+    try {
+      const embedding = await generateEmbedding(normalized);
+      const { data: matches } = await supabase.rpc("match_user_rule", {
+        p_user_id: userId,
+        query_embedding: JSON.stringify(embedding),
+        match_threshold: 0.80,
+        match_count: 1,
+      });
+
+      if (matches && matches.length > 0) {
+        const best = matches[0];
+        console.log(
+          `User rule match (RAG): "${normalized}" ≈ "${best.merchant_pattern}" → ${best.category_name} (${(best.similarity * 100).toFixed(1)}%)`
+        );
+        return {
+          category: best.category_name,
+          includeInExpenses: best.include_in_expenses,
+          includeInIncome: best.include_in_income,
+        };
+      }
+    } catch {
+      // RAG best-effort
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -134,7 +208,8 @@ async function matchPattern(merchant: string): Promise<{ category: string; metho
  * Use Azure OpenAI to parse a bank email and classify it in one call.
  */
 export async function parseWithAI(
-  email: FetchedEmail
+  email: FetchedEmail,
+  userId?: string
 ): Promise<AIParseResult | null> {
   try {
     const userMessage = `Asunto: ${email.subject}
@@ -164,17 +239,41 @@ ${email.bodyText.slice(0, 2000)}`;
 
     let categoryName = parsed.categoryName || "Otros";
     let classificationMethod: "ai" | "pattern" = "ai";
+    let excludeFromTotals = false;
 
-    // RAG-first: always check learned patterns before accepting AI's category
-    const match = await matchPattern(parsed.merchant);
-    if (match) {
-      if (match.category !== categoryName) {
-        console.log(
-          `RAG override: AI said "${categoryName}" but RAG matched "${match.category}" for "${parsed.merchant}"`
-        );
+    // Priority 1: User-specific rules (per-user RAG)
+    if (userId) {
+      const userRule = await matchUserRule(parsed.merchant, userId);
+      if (userRule) {
+        categoryName = userRule.category;
+        classificationMethod = "pattern";
+        // Determine exclusion based on transaction type and rule
+        if (parsed.type === "expense" && !userRule.includeInExpenses) {
+          excludeFromTotals = true;
+        }
+        if (parsed.type === "income" && !userRule.includeInIncome) {
+          excludeFromTotals = true;
+        }
+      } else {
+        // Priority 2: Global patterns
+        const match = await matchPattern(parsed.merchant);
+        if (match) {
+          if (match.category !== categoryName) {
+            console.log(
+              `RAG override: AI said "${categoryName}" but RAG matched "${match.category}" for "${parsed.merchant}"`
+            );
+          }
+          categoryName = match.category;
+          classificationMethod = match.method;
+        }
       }
-      categoryName = match.category;
-      classificationMethod = match.method;
+    } else {
+      // No userId: only check global patterns
+      const match = await matchPattern(parsed.merchant);
+      if (match) {
+        categoryName = match.category;
+        classificationMethod = match.method;
+      }
     }
 
     return {
@@ -186,6 +285,7 @@ ${email.bodyText.slice(0, 2000)}`;
       cardLastFour: parsed.cardLastFour || null,
       categoryName,
       classificationMethod,
+      excludeFromTotals,
     };
   } catch (err) {
     console.error("AI parsing failed:", err);

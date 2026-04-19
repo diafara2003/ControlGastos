@@ -4,7 +4,7 @@ import { parseWithAI } from "./ai-parser";
 
 export interface ParseResult {
   email: FetchedEmail;
-  parsed: ParsedTransaction | null;
+  parsed: (ParsedTransaction & { excludeFromTotals?: boolean }) | null;
   categoryName: string | null;
   method: "ai" | "pattern" | "failed";
 }
@@ -12,7 +12,10 @@ export interface ParseResult {
 /**
  * Parse emails using AI. Processes them in parallel with concurrency limit.
  */
-export async function parseEmails(emails: FetchedEmail[]): Promise<ParseResult[]> {
+export async function parseEmails(
+  emails: FetchedEmail[],
+  userId?: string
+): Promise<ParseResult[]> {
   const CONCURRENCY = 5;
   const results: ParseResult[] = [];
 
@@ -21,12 +24,12 @@ export async function parseEmails(emails: FetchedEmail[]): Promise<ParseResult[]
     const batchResults = await Promise.all(
       batch.map(async (email) => {
         try {
-          const parsed = await parseWithAI(email);
+          const parsed = await parseWithAI(email, userId);
           if (parsed) {
-            const { categoryName, classificationMethod, ...transaction } = parsed;
+            const { categoryName, classificationMethod, excludeFromTotals, ...transaction } = parsed;
             return {
               email,
-              parsed: transaction,
+              parsed: { ...transaction, excludeFromTotals },
               categoryName,
               method: classificationMethod ?? "ai",
             } as ParseResult;

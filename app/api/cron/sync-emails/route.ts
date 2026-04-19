@@ -161,7 +161,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 
       // 3. Parse + classify emails with AI (single call per email)
       console.log(`Parsing ${newEmails.length} new emails with AI (${existingIds.size} already processed)...`);
-      const parseResults = await parseEmails(newEmails);
+      const parseResults = await parseEmails(newEmails, account.user_id);
 
       for (const r of parseResults) {
         console.log(`AI result: parsed=${!!r.parsed} ${r.parsed ? `type=${r.parsed.type} amount=${r.parsed.amount} merchant=${r.parsed.merchant} category=${r.categoryName}` : 'no_transaction'}`);
@@ -229,6 +229,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,
             bank_account_id: bankAccountId,
+            exclude_from_totals: result.parsed.excludeFromTotals ?? false,
           });
 
           if (insertError) {

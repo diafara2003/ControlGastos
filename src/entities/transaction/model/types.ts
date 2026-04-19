@@ -18,6 +18,8 @@ export interface Transaction {
   email_message_id: string | null;
   raw_email_snippet: string | null;
   card_last_four: string | null;
+  bank_account_id: string | null;
+  exclude_from_totals: boolean;
   created_at: string;
   updated_at: string;
   // Joined
