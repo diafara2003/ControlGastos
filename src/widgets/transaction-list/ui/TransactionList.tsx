@@ -137,7 +137,7 @@ export function TransactionList({
             })()}
 
             {/* Date header with daily summary */}
-            <div className={`sticky top-0 z-10 px-3 py-1.5 flex items-center justify-between ${isWeekend ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50 dark:bg-slate-900"}`}>
+            <div className={`sticky top-[130px] md:top-[140px] z-10 px-3 py-1.5 flex items-center justify-between rounded-lg ${isWeekend ? "bg-purple-50 dark:bg-purple-900/10" : "bg-gray-50 dark:bg-slate-900"}`}>
               <p className="text-xs font-medium text-gray-500 uppercase">
                 {d.toLocaleDateString("es-CO", {
                   weekday: "long",
