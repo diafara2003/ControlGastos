@@ -46,17 +46,16 @@ export function BankAccountSetup() {
 
       if (!data || data.length < 2) return;
 
-      // Check if any account is unlabeled (needs setup)
       const needsSetup = data.some((a) => !a.label);
       if (!needsSetup) return;
 
-      // Count transactions per account
+      // Count transactions per account (by card_last_four since bank_account_id may not be linked yet)
       const withCounts = await Promise.all(
         data.map(async (acc) => {
           const { count } = await supabase
             .from("transactions")
             .select("id", { count: "exact", head: true })
-            .eq("bank_account_id", acc.id);
+            .eq("card_last_four", acc.identifier);
           return { ...acc, txn_count: count ?? 0 };
         })
       );
