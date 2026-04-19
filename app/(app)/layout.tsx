@@ -5,6 +5,7 @@ import { AutoSync } from "@/src/features/sync-emails/ui/AutoSync";
 import { InstallPrompt } from "@/src/features/pwa-install";
 import { NotificationPrompt } from "@/src/features/push-notifications";
 import { CreditCardCheck } from "@/src/features/credit-card-setup";
+import { BankAccountSetup } from "@/src/features/bank-account-setup";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <InstallPrompt />
       <NotificationPrompt />
       <CreditCardCheck />
+      <BankAccountSetup />
     </div>
   );
 }

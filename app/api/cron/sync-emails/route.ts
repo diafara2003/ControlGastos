@@ -183,6 +183,35 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         try {
           const categoryId = categoryMap.get(result.categoryName ?? "") ?? null;
 
+          // Auto-detect and link bank account
+          let bankAccountId: string | null = null;
+          if (result.parsed.cardLastFour) {
+            const { data: existingBank } = await supabase
+              .from("bank_accounts")
+              .select("id")
+              .eq("user_id", account.user_id)
+              .eq("identifier", result.parsed.cardLastFour)
+              .single();
+
+            if (existingBank) {
+              bankAccountId = existingBank.id;
+            } else {
+              const { data: newBank } = await supabase
+                .from("bank_accounts")
+                .insert({
+                  user_id: account.user_id,
+                  identifier: result.parsed.cardLastFour,
+                  bank_name: result.email.from?.split("@")[1]?.split(".")[0] ?? "",
+                  is_tracked: true,
+                  track_expenses: true,
+                  track_income: true,
+                })
+                .select("id")
+                .single();
+              bankAccountId = newBank?.id ?? null;
+            }
+          }
+
           const { error: insertError } = await supabase.from("transactions").insert({
             user_id: account.user_id,
             email_account_id: account.id,
@@ -196,6 +225,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,
+            bank_account_id: bankAccountId,
           });
 
           if (insertError) {

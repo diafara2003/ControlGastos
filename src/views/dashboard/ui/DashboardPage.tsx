@@ -87,13 +87,60 @@ export function DashboardPage() {
 
       setTransactions(txns);
 
-      const income = txns
-        .filter((t) => t.type === "income")
-        .reduce((sum, t) => sum + t.amount, 0);
-      const expenses = txns
-        .filter((t) => t.type === "expense")
-        .reduce((sum, t) => sum + t.amount, 0);
-      setTotals({ income, expenses });
+      // Load bank accounts to filter tracked transactions
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      let untrackedIds: Set<string> | null = null;
+      if (authUser) {
+        const { data: bankAccounts } = await supabase
+          .from("bank_accounts")
+          .select("id, identifier, is_tracked, track_expenses, track_income")
+          .eq("user_id", authUser.id);
+
+        if (bankAccounts && bankAccounts.length > 0) {
+          untrackedIds = new Set<string>();
+          const noExpenseIds = new Set<string>();
+          const noIncomeIds = new Set<string>();
+          for (const ba of bankAccounts) {
+            if (!ba.is_tracked) untrackedIds.add(ba.identifier);
+            if (!ba.track_expenses) noExpenseIds.add(ba.identifier);
+            if (!ba.track_income) noIncomeIds.add(ba.identifier);
+          }
+
+          // Filter for totals: exclude untracked, respect per-type tracking
+          const trackedTxns = txns.filter((t) => {
+            const card = t.card_last_four;
+            if (!card) return true; // no card = assumed tracked
+            if (untrackedIds!.has(card)) return false;
+            if (t.type === "expense" && noExpenseIds.has(card)) return false;
+            if (t.type === "income" && noIncomeIds.has(card)) return false;
+            return true;
+          });
+
+          const income = trackedTxns
+            .filter((t) => t.type === "income")
+            .reduce((sum, t) => sum + t.amount, 0);
+          const expenses = trackedTxns
+            .filter((t) => t.type === "expense")
+            .reduce((sum, t) => sum + t.amount, 0);
+          setTotals({ income, expenses });
+        } else {
+          const income = txns
+            .filter((t) => t.type === "income")
+            .reduce((sum, t) => sum + t.amount, 0);
+          const expenses = txns
+            .filter((t) => t.type === "expense")
+            .reduce((sum, t) => sum + t.amount, 0);
+          setTotals({ income, expenses });
+        }
+      } else {
+        const income = txns
+          .filter((t) => t.type === "income")
+          .reduce((sum, t) => sum + t.amount, 0);
+        const expenses = txns
+          .filter((t) => t.type === "expense")
+          .reduce((sum, t) => sum + t.amount, 0);
+        setTotals({ income, expenses });
+      }
 
       // Compare vs last month up to the same day
       const now = new Date();

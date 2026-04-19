@@ -44,6 +44,7 @@ Reglas:
 - "retiraste", "retiro" → type = "expense", categoría = "Efectivo"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
+- description debe ser útil y descriptiva (ej: "Compra en supermercado con débito *1036", "Pago de nómina SINCOSOFT", "Retiro cajero Servibanca"). NO repetir el asunto del correo ni poner "Alertas y Notificaciones"
 - transactionDate debe extraerse del cuerpo del correo, no del header
 - Extractos de tarjeta de crédito o servicios (Addi, Nu, etc.) con "total a pagar", "saldo a pagar" o "valor de tu cuota" → type = "expense", merchant = nombre del servicio (ej: "Addi", "Nu"), categoría = "Otros", amount = el total/cuota a pagar`;
 
@@ -164,13 +165,16 @@ ${email.bodyText.slice(0, 2000)}`;
     let categoryName = parsed.categoryName || "Otros";
     let classificationMethod: "ai" | "pattern" = "ai";
 
-    // If AI classified as "Otros", check learned patterns (text + RAG)
-    if (categoryName === "Otros") {
-      const match = await matchPattern(parsed.merchant);
-      if (match) {
-        categoryName = match.category;
-        classificationMethod = match.method;
+    // RAG-first: always check learned patterns before accepting AI's category
+    const match = await matchPattern(parsed.merchant);
+    if (match) {
+      if (match.category !== categoryName) {
+        console.log(
+          `RAG override: AI said "${categoryName}" but RAG matched "${match.category}" for "${parsed.merchant}"`
+        );
       }
+      categoryName = match.category;
+      classificationMethod = match.method;
     }
 
     return {
