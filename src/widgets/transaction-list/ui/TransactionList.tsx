@@ -146,7 +146,10 @@ export function TransactionList({
                 })}
               </p>
               {(expenses > 0 || income > 0) && (
-                <span className={`text-xs font-semibold tabular-nums ${income - expenses >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                <span
+                  title={`Gastos: -${formatCOP(expenses)}${income > 0 ? ` · Ingresos: +${formatCOP(income)}` : ""}`}
+                  className={`text-xs font-semibold tabular-nums cursor-default ${income - expenses >= 0 ? "text-emerald-600" : "text-rose-500"}`}
+                >
                   {income - expenses >= 0 ? "+" : ""}{formatCOP(income - expenses)}
                 </span>
               )}
