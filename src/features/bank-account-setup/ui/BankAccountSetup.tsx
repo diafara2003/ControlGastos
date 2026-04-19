@@ -11,7 +11,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/shared/ui/dialog";
-import { CreditCard, Landmark } from "lucide-react";
+import { Landmark } from "lucide-react";
+import { getBankBrand } from "@/src/shared/config/bank-brands";
 
 interface BankAccount {
   id: string;
@@ -119,16 +120,28 @@ export function BankAccountSetup() {
               className="rounded-xl border border-gray-200 p-4 space-y-3"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-900">
-                    *{acc.identifier}
-                  </span>
-                  {acc.bank_name && (
-                    <span className="text-xs text-gray-400">
-                      {acc.bank_name}
+                <div className="flex items-center gap-2.5">
+                  {(() => {
+                    const brand = getBankBrand(acc.bank_name);
+                    return (
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
+                        style={{ backgroundColor: brand.bgColor, color: brand.textColor }}
+                      >
+                        {brand.initials}
+                      </div>
+                    );
+                  })()}
+                  <div>
+                    <span className="text-sm font-semibold text-gray-900">
+                      *{acc.identifier}
                     </span>
-                  )}
+                    {acc.bank_name && (
+                      <p className="text-[11px] text-gray-400">
+                        {getBankBrand(acc.bank_name).name}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <span className="text-[10px] text-gray-400">
                   {acc.txn_count ?? 0} movimientos

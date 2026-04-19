@@ -7,6 +7,7 @@ import { fetchOutlookGraphEmails } from "@/src/features/sync-emails/lib/outlook-
 import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { sendPushToUser } from "@/src/shared/lib/push-sender";
 import { formatCOP } from "@/src/shared/lib/currency";
+import { getBankBrand } from "@/src/shared/config/bank-brands";
 
 export const maxDuration = 60; // Vercel function timeout
 
@@ -196,12 +197,14 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             if (existingBank) {
               bankAccountId = existingBank.id;
             } else {
+              const emailDomain = result.email.from?.split("@")[1]?.split(".")[0] ?? "";
+              const brand = getBankBrand(emailDomain);
               const { data: newBank } = await supabase
                 .from("bank_accounts")
                 .insert({
                   user_id: account.user_id,
                   identifier: result.parsed.cardLastFour,
-                  bank_name: result.email.from?.split("@")[1]?.split(".")[0] ?? "",
+                  bank_name: brand.name !== "Banco" ? emailDomain : emailDomain,
                   is_tracked: true,
                   track_expenses: true,
                   track_income: true,
