@@ -18,7 +18,7 @@ const HISTORY_MONTHS = 3;
 const ALERT_THRESHOLD = 1.15; // 15% over historical average
 
 export function DashboardPage() {
-  const { selectedAccount } = useAccountFilter();
+  const { selectedAccount, accounts } = useAccountFilter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totals, setTotals] = useState({ income: 0, expenses: 0 });
@@ -92,7 +92,7 @@ export function DashboardPage() {
       setTransactions(txns);
 
       // Filter by account selection
-      const filtered = filterByAccount(txns, selectedAccount);
+      const filtered = filterByAccount(txns, selectedAccount, accounts);
       const income = filtered
         .filter((t) => t.type === "income")
         .reduce((sum, t) => sum + t.amount, 0);
@@ -196,7 +196,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, isCurrentMonth, selectedAccount]);
+  }, [selectedDate, isCurrentMonth, selectedAccount, accounts]);
 
   useEffect(() => {
     load();

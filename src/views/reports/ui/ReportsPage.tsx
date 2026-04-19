@@ -77,7 +77,7 @@ export function ReportsPage() {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedWithdrawal, setExpandedWithdrawal] = useState<string | null>(null);
   const [withdrawalDetails, setWithdrawalDetails] = useState<Record<string, { description: string; amount: number }[]>>({});
-  const { selectedAccount } = useAccountFilter();
+  const { selectedAccount, accounts: bankAccounts } = useAccountFilter();
 
   const isCurrentMonth =
     selectedDate.getMonth() === new Date().getMonth() &&
@@ -163,12 +163,12 @@ export function ReportsPage() {
   }, [load]);
 
   const filteredTxns = useMemo(
-    () => filterByAccount(transactions, selectedAccount),
-    [transactions, selectedAccount]
+    () => filterByAccount(transactions, selectedAccount, bankAccounts),
+    [transactions, selectedAccount, bankAccounts]
   );
   const filteredPrevTxns = useMemo(
-    () => filterByAccount(prevTransactions, selectedAccount),
-    [prevTransactions, selectedAccount]
+    () => filterByAccount(prevTransactions, selectedAccount, bankAccounts),
+    [prevTransactions, selectedAccount, bankAccounts]
   );
 
   // ---- Derived data ----

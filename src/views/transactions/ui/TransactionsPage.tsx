@@ -37,7 +37,7 @@ export function TransactionsPage() {
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
   const [withdrawalTx, setWithdrawalTx] = useState<Transaction | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const { selectedAccount } = useAccountFilter();
+  const { selectedAccount, accounts: bankAccounts } = useAccountFilter();
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -83,7 +83,7 @@ export function TransactionsPage() {
   }, [loadData]);
 
   const filteredTransactions = useMemo(() => {
-    let filtered = filterByAccount(transactions, selectedAccount);
+    let filtered = filterByAccount(transactions, selectedAccount, bankAccounts);
     if (withdrawalFilter) {
       filtered = filtered.filter(
         (t) =>

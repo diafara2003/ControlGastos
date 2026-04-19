@@ -73,12 +73,23 @@ export function useAccountFilter() {
 
 /**
  * Filter transactions based on the selected account.
- * "all" = show everything, otherwise filter by card_last_four.
+ * "all" = show only tracked accounts (excludes untracked).
+ * "all-including-untracked" = show everything.
+ * specific identifier = show only that account.
  */
 export function filterByAccount<T extends { card_last_four: string | null }>(
   items: T[],
-  selectedAccount: string
+  selectedAccount: string,
+  accounts?: BankAccountInfo[]
 ): T[] {
-  if (selectedAccount === "all") return items;
+  if (selectedAccount === "all") {
+    // Default: exclude untracked accounts
+    if (!accounts || accounts.length === 0) return items;
+    const untrackedIds = new Set(
+      accounts.filter((a) => !a.is_tracked).map((a) => a.identifier)
+    );
+    if (untrackedIds.size === 0) return items;
+    return items.filter((t) => !t.card_last_four || !untrackedIds.has(t.card_last_four));
+  }
   return items.filter((t) => t.card_last_four === selectedAccount);
 }
