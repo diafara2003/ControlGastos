@@ -95,28 +95,58 @@ export function TransactionList({
         return (
           <div key={date}>
             {/* Weekend summary banner — only on Saturday */}
-            {weekendSummary && (
-              <div className="mb-2 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 px-3 py-2">
-                <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">
-                  Fin de semana
-                </p>
-                <div className="flex items-center gap-3 mt-0.5">
-                  {weekendSummary.expenses > 0 && (
-                    <span className="text-xs text-red-600 dark:text-red-400">
-                      Gastos: -{formatCOP(weekendSummary.expenses)}
-                    </span>
+            {weekendSummary && (() => {
+              const wkBalance = weekendSummary.income - weekendSummary.expenses;
+              const overspent = weekendSummary.expenses > weekendSummary.income && weekendSummary.income > 0;
+              const onlyExpenses = weekendSummary.expenses > 0 && weekendSummary.income === 0;
+              const isNegative = overspent || onlyExpenses;
+
+              return (
+                <div className={`mb-2 rounded-lg border px-4 py-3 ${
+                  isNegative
+                    ? "bg-rose-50 border-rose-200 dark:bg-rose-900/20 dark:border-rose-800"
+                    : "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800"
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <p className={`text-xs font-semibold ${
+                      isNegative ? "text-rose-700 dark:text-rose-300" : "text-purple-700 dark:text-purple-300"
+                    }`}>
+                      Fin de semana
+                    </p>
+                    <p className={`text-sm font-bold tabular-nums ${
+                      wkBalance >= 0
+                        ? "text-emerald-700 dark:text-emerald-300"
+                        : "text-rose-700 dark:text-rose-300"
+                    }`}>
+                      {wkBalance >= 0 ? "+" : ""}{formatCOP(wkBalance)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 mt-1.5">
+                    {weekendSummary.expenses > 0 && (
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Gastos</p>
+                        <p className="text-xs font-semibold text-rose-600 tabular-nums">
+                          -{formatCOP(weekendSummary.expenses)}
+                        </p>
+                      </div>
+                    )}
+                    {weekendSummary.income > 0 && (
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Ingresos</p>
+                        <p className="text-xs font-semibold text-emerald-600 tabular-nums">
+                          +{formatCOP(weekendSummary.income)}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  {overspent && (
+                    <p className="text-[11px] font-medium text-rose-600 mt-1.5">
+                      Gastaste {formatCOP(weekendSummary.expenses - weekendSummary.income)} más de lo que ingresaste
+                    </p>
                   )}
-                  {weekendSummary.income > 0 && (
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                      Ingresos: +{formatCOP(weekendSummary.income)}
-                    </span>
-                  )}
-                  <span className={`text-sm font-bold ${weekendSummary.income - weekendSummary.expenses >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>
-                    Total: {weekendSummary.income - weekendSummary.expenses >= 0 ? "+" : ""}{formatCOP(weekendSummary.income - weekendSummary.expenses)}
-                  </span>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* Date header with daily summary */}
             <div className={`sticky top-0 z-10 px-3 py-1.5 flex items-center justify-between ${isWeekend ? "bg-purple-50/50 dark:bg-purple-900/10" : "bg-gray-50 dark:bg-slate-900"}`}>
