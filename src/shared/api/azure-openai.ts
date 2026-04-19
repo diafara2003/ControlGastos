@@ -16,9 +16,9 @@ export async function chatCompletion(
 ): Promise<string> {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT ?? "gpt-4o-mini";
+  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT ?? "gpt-4.1-mini";
   const apiVersion =
-    process.env.AZURE_OPENAI_API_VERSION ?? "2024-08-01-preview";
+    process.env.AZURE_OPENAI_API_VERSION ?? "2024-12-01-preview";
 
   if (!endpoint || !apiKey) {
     throw new Error("Azure OpenAI not configured");

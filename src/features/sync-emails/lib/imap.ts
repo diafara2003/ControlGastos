@@ -77,10 +77,11 @@ export async function fetchImapEmails(
     const lock = await client.getMailboxLock("INBOX");
 
     try {
-      // Search for emails from financial senders in the last 30 days
+      // Search for emails from financial senders in the last 20 days
+      const minWindow = 20 * 24 * 60 * 60 * 1000;
       const since = account.last_sync_at
-        ? new Date(account.last_sync_at)
-        : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        ? new Date(Math.min(new Date(account.last_sync_at).getTime(), Date.now() - minWindow))
+        : new Date(Date.now() - minWindow);
 
       // Build OR search for all financial senders
       const searchCriteria: { or: { from: string }[] } & { since: Date } = {

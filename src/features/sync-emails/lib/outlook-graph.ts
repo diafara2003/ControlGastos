@@ -2,12 +2,20 @@ import { createServiceClient } from "@/src/shared/api/supabase/service";
 import type { FetchedEmail } from "./gmail";
 
 const FINANCIAL_KEYWORDS = [
-  "bancolombia", "nequi", "davivienda", "banco", "nu.com",
-  "cajasocial", "avvillas", "bbva", "scotiabank", "colpatria",
-  "transacción", "transaccion", "compra", "pago", "retiro",
-  "transferencia", "débito", "debito", "crédito", "credito",
+  // Bancos colombianos
+  "bancolombia", "notificacionesbancolombia", "nequi", "davivienda",
+  "bbva", "scotiabank", "colpatria", "cajasocial", "avvillas",
+  "banco", "bancoagrario", "bancopopular", "bancodebogota",
+  "bancodeoccidente", "bancocajasocial", "itau", "gnb sudameris",
+  "citibank", "pichincha", "falabella", "finandina", "serfinanza",
+  "bancoomeva", "bancamia", "lulo bank", "nu.com", "nubank",
+  "rappipay", "daviplata", "movii", "dale", "ualá",
+  // Palabras clave de transacciones
+  "compra", "compraste", "pagaste", "pago", "retiro", "retiraste",
+  "transferencia", "transferiste", "te enviaron", "recibiste",
+  "débito", "debito", "crédito", "credito",
   "tarjeta", "saldo", "nómina", "nomina",
-  "consignación", "consignacion", "PSE", "notificacionesbancolombia",
+  "consignación", "consignacion", "PSE",
 ];
 
 async function refreshMicrosoftToken(
@@ -87,8 +95,12 @@ export async function fetchOutlookGraphEmails(
   const fetchCount = Math.min(Math.max(maxResults * 10, 100), 500);
   let url = `https://graph.microsoft.com/v1.0/me/messages?$top=${fetchCount}&$orderby=receivedDateTime%20desc&$select=id,from,subject,receivedDateTime,bodyPreview`;
 
+  // Always look back at least 20 days to catch all bank emails
+  const minWindow = 20 * 24 * 60 * 60 * 1000;
   if (lastSyncAt) {
-    const sinceDate = new Date(new Date(lastSyncAt).getTime() - 5 * 60 * 1000);
+    const elapsed = Date.now() - new Date(lastSyncAt).getTime();
+    const lookback = Math.max(elapsed + 5 * 60 * 1000, minWindow);
+    const sinceDate = new Date(Date.now() - lookback);
     url += `&$filter=receivedDateTime%20ge%20${sinceDate.toISOString()}`;
   }
 

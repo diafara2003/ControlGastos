@@ -56,6 +56,60 @@ export const bancolombiaPattern: BankPattern = {
 
     // --- EXPENSES ---
 
+    // "Compraste $36.084,00 en KS*PAGSEGURO CO con tu T.Deb *1036"
+    const comprasteMatch = bodyText.match(
+      /[Cc]ompraste\s+\$([\d.,]+)\s+en\s+([^,]+?)(?:\s+con\s+tu|,|\.|$)/i
+    );
+    if (comprasteMatch) {
+      const amount = parseAmount(`$${comprasteMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: comprasteMatch[2].trim(),
+          description: "Compra con tarjeta",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "Pagaste $X en COMERCIO" / "Pagaste $X a NOMBRE"
+    const pagasteMatch = bodyText.match(
+      /[Pp]agaste\s+\$([\d.,]+)\s+(?:en|a)\s+([^,]+?)(?:\s+con\s+tu|,|\.|$)/i
+    );
+    if (pagasteMatch) {
+      const amount = parseAmount(`$${pagasteMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: pagasteMatch[2].trim(),
+          description: "Pago",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "Retiraste $X en CAJERO"
+    const retirasteMatch = bodyText.match(
+      /[Rr]etiraste\s+\$([\d.,]+)(?:\s+(?:en|de)\s+([^,]+?))?(?:\s+con\s+tu|,|\.|$)/i
+    );
+    if (retirasteMatch) {
+      const amount = parseAmount(`$${retirasteMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: retirasteMatch[2]?.trim() ?? "Cajero automático",
+          description: "Retiro",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
     // Compra con tarjeta: "Bancolombia le informa compra por $150,000 en ALMACEN EXITO"
     const compraMatch = bodyText.match(
       /compra\s+(?:con\s+t[^$]*)?por\s+\$([\d.,]+)\s+en\s+([^.]+)/i
@@ -128,6 +182,42 @@ export const bancolombiaPattern: BankPattern = {
       }
     }
 
+    // "transferiste $75,000.00 a la llave ... a NOMBRE el DD/MM/YY"
+    const transferisteMatch = bodyText.match(
+      /transferiste\s+\$([\d.,]+)\s+.*?a\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s+el\s+/i
+    );
+    if (transferisteMatch) {
+      const amount = parseAmount(`$${transferisteMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: transferisteMatch[2].trim(),
+          description: "Transferencia enviada",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "te enviaron $X desde ... de NOMBRE"
+    const teEnviaronMatch = bodyText.match(
+      /te\s+enviaron\s+\$([\d.,]+).*?(?:de|desde)\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)(?:\s+el\s+|[.,]|$)/i
+    );
+    if (teEnviaronMatch) {
+      const amount = parseAmount(`$${teEnviaronMatch[1]}`);
+      if (amount) {
+        return {
+          type: "income",
+          amount,
+          merchant: teEnviaronMatch[2].trim(),
+          description: "Transferencia recibida",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
     // Débito automático
     const debitoMatch = bodyText.match(
       /d[eé]bito\s+autom[aá]tico\s+por\s+\$([\d.,]+)\s+(?:de|en|a)\s+([^.]+)/i
@@ -186,28 +276,6 @@ export const bancolombiaPattern: BankPattern = {
             cardLastFour,
           };
         }
-      }
-    }
-
-    // Generic expense fallback: any amount mention with Bancolombia
-    const genericMatch = bodyText.match(/\$([\d.,]+)/);
-    if (genericMatch) {
-      const amount = parseAmount(`$${genericMatch[1]}`);
-      if (amount && amount > 0) {
-        // Determine type from keywords
-        const isIncome =
-          text.includes("recib") ||
-          text.includes("abono") ||
-          text.includes("consignac");
-
-        return {
-          type: isIncome ? "income" : "expense",
-          amount,
-          merchant: "Bancolombia",
-          description: subject || "Notificación Bancolombia",
-          transactionDate: parseDateFromBody(bodyText, date),
-          cardLastFour,
-        };
       }
     }
 

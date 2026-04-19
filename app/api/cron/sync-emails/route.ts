@@ -5,8 +5,6 @@ import { createServiceClient } from "@/src/shared/api/supabase/service";
 import { fetchImapEmails } from "@/src/features/sync-emails/lib/imap";
 import { fetchOutlookGraphEmails } from "@/src/features/sync-emails/lib/outlook-graph";
 import { parseEmails } from "@/src/features/sync-emails/lib/parser";
-import { parseWithAI } from "@/src/features/sync-emails/lib/ai-parser";
-import { classifyTransaction } from "@/src/features/classify-transaction";
 import { sendPushToUser } from "@/src/shared/lib/push-sender";
 import { formatCOP } from "@/src/shared/lib/currency";
 
@@ -89,13 +87,11 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
 
     try {
       // 1. Fetch emails — IMAP for Gmail, Graph API for Outlook
-      console.log(`Sync account: ${account.email} | provider: ${account.provider} | imap: ${!!account.imap_host} | token: ${!!account.provider_token_encrypted} | maxEmails: ${maxEmails}`);
+      console.log(`Sync account: ${account.email} | provider: ${account.provider} | maxEmails: ${maxEmails}`);
       let emails;
       if (account.imap_host && account.imap_password_encrypted) {
-        // Has IMAP credentials (Gmail, etc.)
         emails = await fetchImapEmails(account, maxEmails);
       } else if (account.provider === "outlook" && account.provider_token_encrypted) {
-        // Outlook via Graph API — with auto token refresh
         emails = await fetchOutlookGraphEmails(
           account.provider_token_encrypted,
           account.last_sync_at,
@@ -119,7 +115,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         continue;
       }
 
-      // 2. Check for already-processed emails (deduplication)
+      // 2. Deduplicate — skip emails already processed
       const messageIds = emails.map((e) => e.messageId);
       const { data: existing } = await supabase
         .from("transactions")
@@ -133,28 +129,22 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         (e) => !existingIds.has(e.messageId)
       );
 
-      // 3. Parse emails
-      for (const email of newEmails) {
-        console.log(`Parsing email: from=${email.from.slice(0, 30)} subj=${email.subject.slice(0, 40)} body=${email.bodyText.slice(0, 200)}`);
+      if (newEmails.length === 0) {
+        console.log(`All ${emails.length} emails already processed, skipping`);
+        await updateSyncLog(supabase, syncLog?.id, "success", logEntry.processed, 0);
+        results.push(logEntry);
+        continue;
       }
-      const parseResults = parseEmails(newEmails);
+
+      // 3. Parse + classify emails with AI (single call per email)
+      console.log(`Parsing ${newEmails.length} new emails with AI (${existingIds.size} already processed)...`);
+      const parseResults = await parseEmails(newEmails);
 
       for (const r of parseResults) {
-        console.log(`Parse result: method=${r.method} parsed=${!!r.parsed} ${r.parsed ? `amount=${r.parsed.amount} merchant=${r.parsed.merchant}` : 'FAILED'}`);
+        console.log(`AI result: parsed=${!!r.parsed} ${r.parsed ? `type=${r.parsed.type} amount=${r.parsed.amount} merchant=${r.parsed.merchant} category=${r.categoryName}` : 'no_transaction'}`);
       }
 
-      // 4. AI fallback for failed parses
-      for (const result of parseResults) {
-        if (!result.parsed) {
-          const aiParsed = await parseWithAI(result.email);
-          if (aiParsed) {
-            result.parsed = aiParsed;
-            result.method = "ai";
-          }
-        }
-      }
-
-      // 5. Get user categories for classification
+      // 4. Get user categories to map names → IDs
       const { data: categories } = await supabase
         .from("categories")
         .select("id, name")
@@ -164,22 +154,12 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         categories?.map((c) => [c.name, c.id]) ?? []
       );
 
-      // 6. Classify and save each parsed transaction
+      // 5. Save parsed transactions
       for (const result of parseResults) {
         if (!result.parsed) continue;
 
         try {
-          console.log(`Classifying: ${result.parsed.merchant.slice(0, 30)} $${result.parsed.amount}`);
-          let classification;
-          try {
-            classification = await classifyTransaction(result.parsed, account.user_id);
-          } catch (classErr) {
-            console.error("Classification error, using fallback:", classErr);
-            classification = { categoryName: "Otros", method: "none" as const };
-          }
-          console.log(`Classified as: ${classification.categoryName} (${classification.method})`);
-
-          const categoryId = categoryMap.get(classification.categoryName) ?? null;
+          const categoryId = categoryMap.get(result.categoryName ?? "") ?? null;
 
           const { error: insertError } = await supabase.from("transactions").insert({
             user_id: account.user_id,
@@ -190,10 +170,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             description: result.parsed.description,
             category_id: categoryId,
             transaction_date: result.parsed.transactionDate.toISOString(),
-            classification_method:
-              classification.method === "none"
-                ? null
-                : classification.method,
+            classification_method: "ai",
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,
@@ -204,7 +181,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             continue;
           }
 
-          console.log(`Transaction saved: ${result.parsed.type} $${result.parsed.amount} ${result.parsed.merchant.slice(0, 20)}`);
+          console.log(`Saved: ${result.parsed.type} $${result.parsed.amount} ${result.parsed.merchant.slice(0, 25)} → ${result.categoryName}`);
           logEntry.created++;
         } catch (err) {
           logEntry.errors.push(
@@ -213,10 +190,10 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
         }
       }
 
-      // 7. Send push notifications for large/unusual expenses
+      // 6. Send push notifications for large/unusual expenses
       await sendTransactionNotifications(supabase, account.user_id, parseResults);
 
-      // 8. Update last_sync_at
+      // 7. Update last_sync_at checkpoint
       await supabase
         .from("email_accounts")
         .update({ last_sync_at: new Date().toISOString() })
@@ -262,7 +239,6 @@ async function sendTransactionNotifications(
   parseResults: { parsed: { type: string; amount: number; merchant: string } | null }[]
 ) {
   try {
-    // Get user notification preferences
     const { data: profile } = await supabase
       .from("profiles")
       .select("notify_large_expense, notify_large_expense_threshold, notify_budget_alert")
@@ -273,7 +249,6 @@ async function sendTransactionNotifications(
 
     const threshold = profile.notify_large_expense_threshold ?? 500000;
 
-    // Check for large expenses
     if (profile.notify_large_expense) {
       for (const result of parseResults) {
         if (
@@ -291,7 +266,6 @@ async function sendTransactionNotifications(
       }
     }
 
-    // Check budget alerts
     if (profile.notify_budget_alert) {
       const { data: budgetProgress } = await supabase.rpc("get_budget_progress");
       if (budgetProgress) {
