@@ -99,8 +99,16 @@ export function AutoSync() {
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
+    // Periodic sync every 2 minutes (ensures mobile stays updated)
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        sync(5);
+      }
+    }, 2 * 60 * 1000);
+
     return () => {
       clearTimeout(initialSync);
+      clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [sync]);
