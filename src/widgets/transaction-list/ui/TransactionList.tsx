@@ -145,23 +145,11 @@ export function TransactionList({
                   month: "long",
                 })}
               </p>
-              <div className="flex items-center gap-2">
-                {expenses > 0 && (
-                  <span className="text-xs text-red-500">
-                    -{formatCOP(expenses)}
-                  </span>
-                )}
-                {income > 0 && (
-                  <span className="text-xs text-emerald-600">
-                    +{formatCOP(income)}
-                  </span>
-                )}
-                {(expenses > 0 || income > 0) && (
-                  <span className={`text-xs font-bold ${income - expenses >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`}>
-                    {income - expenses >= 0 ? "+" : ""}{formatCOP(income - expenses)}
-                  </span>
-                )}
-              </div>
+              {(expenses > 0 || income > 0) && (
+                <span className={`text-xs font-semibold tabular-nums ${income - expenses >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {income - expenses >= 0 ? "+" : ""}{formatCOP(income - expenses)}
+                </span>
+              )}
             </div>
 
             <div className="divide-y divide-gray-100 bg-white dark:bg-slate-800 rounded-lg">
