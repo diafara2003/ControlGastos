@@ -475,6 +475,7 @@ export function SettingsPage() {
                   }).eq("id", acc.id);
                 }
                 setSavingBanks(false);
+                window.dispatchEvent(new CustomEvent("bank-accounts-updated"));
               }}
               disabled={savingBanks}
               className="w-full"

@@ -205,7 +205,11 @@ export function DashboardPage() {
   useEffect(() => {
     const handler = () => load();
     window.addEventListener("transactions-updated", handler);
-    return () => window.removeEventListener("transactions-updated", handler);
+    window.addEventListener("bank-accounts-updated", handler);
+    return () => {
+      window.removeEventListener("transactions-updated", handler);
+      window.removeEventListener("bank-accounts-updated", handler);
+    };
   }, [load]);
 
   const monthName = getMonthName(selectedDate);

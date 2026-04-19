@@ -147,6 +147,7 @@ export function BankAccountSetup() {
 
     setSaving(false);
     setOpen(false);
+    window.dispatchEvent(new CustomEvent("bank-accounts-updated"));
   };
 
   if (accounts.length < 2) return null;
