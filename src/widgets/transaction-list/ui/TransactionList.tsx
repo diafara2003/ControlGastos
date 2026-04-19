@@ -28,17 +28,17 @@ function getWeekendSummary(
   const d = new Date(currentDate + "T12:00:00");
   const day = d.getDay(); // 0=domingo, 6=sábado
 
-  if (day !== 6) return null; // Solo mostrar en sábado
+  if (day !== 0 && day !== 6) return null;
 
-  // Buscar el domingo siguiente
-  const sunday = new Date(d);
-  sunday.setDate(sunday.getDate() + 1);
-  const sundayKey = sunday.toISOString().split("T")[0];
+  const saturday = day === 6 ? d : new Date(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+  const sunday = new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 1);
+  const satKey = saturday.toISOString().split("T")[0];
+  const sunKey = sunday.toISOString().split("T")[0];
 
-  const satTxns = grouped[currentDate] ?? [];
-  const sunTxns = grouped[sundayKey] ?? [];
-  const all = [...satTxns, ...sunTxns];
+  // Show banner on Saturday. On Sunday, only if Saturday has no transactions.
+  if (day === 0 && (grouped[satKey]?.length ?? 0) > 0) return null;
 
+  const all = [...(grouped[satKey] ?? []), ...(grouped[sunKey] ?? [])];
   if (all.length === 0) return null;
 
   let expenses = 0;
@@ -48,7 +48,7 @@ function getWeekendSummary(
     else income += t.amount;
   }
 
-  return { expenses, income, hasSunday: sunTxns.length > 0 };
+  return { expenses, income };
 }
 
 export function TransactionList({
