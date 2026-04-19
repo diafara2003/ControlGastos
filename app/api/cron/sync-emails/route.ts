@@ -229,7 +229,7 @@ async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,
             bank_account_id: bankAccountId,
-            exclude_from_totals: result.parsed.excludeFromTotals ?? false,
+            exclude_from_totals: result.parsed.excludeFromTotals ?? result.categoryName === "Pago tarjeta crédito",
           });
 
           if (insertError) {

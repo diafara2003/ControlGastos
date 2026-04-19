@@ -33,6 +33,7 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Educación (universidad, Platzi, Coursera, colegios)
 - Efectivo (pagos en efectivo, dinero en mano)
 - Retiro cajero (retiros en cajeros automáticos, ATM, Servibanca, cajero red)
+- Pago tarjeta crédito (pago cuota, pago anticipado, abono a tarjeta de crédito o préstamo)
 - Transferencias (transferencias enviadas a personas)
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)
@@ -43,11 +44,16 @@ Reglas:
 - "transferiste", "enviaste" → type = "expense", categoría = "Transferencias"
 - "te enviaron", "recibiste", "abono", "consignación", "nómina" → type = "income"
 - "retiraste", "retiro", "cajero", "ATM", "Servibanca" → type = "expense", categoría = "Retiro cajero"
+- "pago anticipado", "pago cuota anticipada", "abono a tarjeta", "pago tarjeta" → type = "expense", categoría = "Pago tarjeta crédito"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
 - description debe ser útil y descriptiva (ej: "Compra en supermercado con débito *1036", "Pago de nómina SINCOSOFT", "Retiro cajero Servibanca"). NO repetir el asunto del correo ni poner "Alertas y Notificaciones"
 - transactionDate debe extraerse del cuerpo del correo, no del header
-- Extractos de tarjeta de crédito o servicios (Addi, Nu, etc.) con "total a pagar", "saldo a pagar" o "valor de tu cuota" → type = "expense", merchant = nombre del servicio (ej: "Addi", "Nu"), categoría = "Otros", amount = el total/cuota a pagar`;
+
+Correos que NO son transacciones (responder con {"error": "no_transaction"}):
+- Extractos mensuales que solo tienen PDF adjunto sin monto en el cuerpo del correo
+- Correos duplicados: si dos correos tienen la misma referencia y fecha, el segundo es duplicado
+- Publicidad, promociones, ofertas de crédito preaprobado, alertas de seguridad sin monto`;
 
 /**
  * Parse a date string and ensure it represents midnight in Colombia (UTC-5).
