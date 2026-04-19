@@ -20,6 +20,7 @@ export interface Transaction {
   card_last_four: string | null;
   bank_account_id: string | null;
   exclude_from_totals: boolean;
+  withdrawal_resolved: boolean;
   created_at: string;
   updated_at: string;
   // Joined

@@ -82,20 +82,21 @@ export function DialogContent({
     <div
       ref={overlayRef}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 animate-in fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center sm:bg-black/50 animate-in fade-in"
     >
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-6 shadow-xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0",
-          "max-h-[90vh] overflow-y-auto",
+          "relative w-full bg-white shadow-xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0",
+          "h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto",
+          "sm:max-w-lg sm:rounded-2xl p-6",
           className
         )}
       >
         <button
           onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 rounded-full p-1 hover:bg-gray-100"
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
         >
-          <X className="h-4 w-4 text-gray-500" />
+          <X className="h-4 w-4 text-gray-600" />
         </button>
         {children}
       </div>

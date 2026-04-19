@@ -10,6 +10,7 @@ import { getCategories } from "@/src/entities/category";
 import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
 import { EditTransactionForm } from "@/src/features/edit-transaction";
+import { WithdrawalDetailsModal } from "@/src/features/withdrawal-details";
 import { AddTransactionForm } from "@/src/features/add-transaction";
 import { ExportButton } from "@/src/features/export-csv";
 import { Input } from "@/src/shared/ui/input";
@@ -31,6 +32,7 @@ export function TransactionsPage() {
   const [selectedCard, setSelectedCard] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTx, setEditingTx] = useState<Transaction | null>(null);
+  const [withdrawalTx, setWithdrawalTx] = useState<Transaction | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const { selectedAccount } = useAccountFilter();
 
@@ -124,7 +126,15 @@ export function TransactionsPage() {
       <TransactionList
         transactions={filteredTransactions}
         loading={loading}
-        onTransactionClick={(t) => setEditingTx(t)}
+        onTransactionClick={(t) => {
+          const isWithdrawal = t.category?.name === "Efectivo" ||
+            /cajero|retiro|atm/i.test(t.merchant);
+          if (isWithdrawal) {
+            setWithdrawalTx(t);
+          } else {
+            setEditingTx(t);
+          }
+        }}
       />
 
       {editingTx && (
@@ -136,6 +146,17 @@ export function TransactionsPage() {
             if (!open) setEditingTx(null);
           }}
           onSaved={loadData}
+        />
+      )}
+
+      {withdrawalTx && (
+        <WithdrawalDetailsModal
+          transaction={withdrawalTx}
+          open={!!withdrawalTx}
+          onOpenChange={(open) => {
+            if (!open) setWithdrawalTx(null);
+          }}
+          onUpdated={loadData}
         />
       )}
 

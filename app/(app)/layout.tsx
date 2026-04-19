@@ -6,6 +6,7 @@ import { InstallPrompt } from "@/src/features/pwa-install";
 import { NotificationPrompt } from "@/src/features/push-notifications";
 import { CreditCardCheck } from "@/src/features/credit-card-setup";
 import { BankAccountSetup } from "@/src/features/bank-account-setup";
+import { WithdrawalAlert } from "@/src/features/withdrawal-details/ui/WithdrawalAlert";
 import { AccountFilterProvider } from "@/src/shared/context/account-filter";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -27,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <NotificationPrompt />
       <CreditCardCheck />
       <BankAccountSetup />
+      <WithdrawalAlert />
     </div>
     </AccountFilterProvider>
   );
