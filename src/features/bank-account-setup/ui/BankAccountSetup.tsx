@@ -39,6 +39,51 @@ export function BankAccountSetup() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Auto-detect: find card_last_four values without bank_accounts
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("card_last_four, raw_email_snippet")
+        .eq("user_id", user.id)
+        .not("card_last_four", "is", null);
+
+      if (txns && txns.length > 0) {
+        const { data: existingAccounts } = await supabase
+          .from("bank_accounts")
+          .select("identifier")
+          .eq("user_id", user.id);
+
+        const existingIds = new Set(existingAccounts?.map((a) => a.identifier) ?? []);
+        const newCards = new Map<string, string>();
+
+        for (const t of txns) {
+          if (t.card_last_four && !existingIds.has(t.card_last_four) && !newCards.has(t.card_last_four)) {
+            // Try to detect bank from email snippet
+            const snippet = (t.raw_email_snippet ?? "").toLowerCase();
+            let bankName = "";
+            if (snippet.includes("bancolombia")) bankName = "bancolombia";
+            else if (snippet.includes("caja social") || snippet.includes("cajasocial")) bankName = "bancocajasocial";
+            else if (snippet.includes("davivienda")) bankName = "davivienda";
+            else if (snippet.includes("bbva")) bankName = "bbva";
+            else if (snippet.includes("nequi")) bankName = "nequi";
+            else if (snippet.includes("nu ") || snippet.includes("nu.com")) bankName = "nu";
+            newCards.set(t.card_last_four, bankName);
+          }
+        }
+
+        if (newCards.size > 0) {
+          const inserts = Array.from(newCards.entries()).map(([identifier, bank]) => ({
+            user_id: user.id,
+            identifier,
+            bank_name: bank,
+            is_tracked: true,
+            track_expenses: true,
+            track_income: true,
+          }));
+          await supabase.from("bank_accounts").insert(inserts).select();
+        }
+      }
+
+      // Now load all bank accounts
       const { data } = await supabase
         .from("bank_accounts")
         .select("*")
