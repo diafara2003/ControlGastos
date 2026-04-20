@@ -1,5 +1,5 @@
 INSERT INTO public.categories (user_id, name, icon, color, is_default)
-SELECT u.id, 'Papas', 'baby', '#F472B6', true
+SELECT u.id, 'Papas', 'users', '#F472B6', true
 FROM auth.users u
 WHERE NOT EXISTS (
   SELECT 1 FROM public.categories c
