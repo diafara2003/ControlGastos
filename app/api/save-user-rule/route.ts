@@ -70,7 +70,43 @@ export async function POST(request: Request) {
       { onConflict: "user_id,merchant_pattern" }
     );
 
-    return NextResponse.json({ saved: true, pattern, categoryName });
+    // Reclassify existing transactions that match this pattern
+    const { data: category } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("name", categoryName)
+      .single();
+
+    if (category) {
+      // Find matching transactions by merchant (case-insensitive contains)
+      const { data: matchingTxns } = await supabase
+        .from("transactions")
+        .select("id, merchant")
+        .eq("user_id", user.id)
+        .ilike("merchant", `%${pattern}%`);
+
+      if (matchingTxns && matchingTxns.length > 0) {
+        const ids = matchingTxns.map((t) => t.id);
+        const excludeFromTotals =
+          (includeInExpenses === false && includeInIncome === false) ||
+          includeInExpenses === false ||
+          includeInIncome === false;
+
+        await supabase
+          .from("transactions")
+          .update({
+            category_id: category.id,
+            classification_method: "pattern",
+            exclude_from_totals: excludeFromTotals,
+          })
+          .in("id", ids);
+
+        console.log(`Reclassified ${ids.length} transactions for pattern "${pattern}" → ${categoryName}`);
+      }
+    }
+
+    return NextResponse.json({ saved: true, pattern, categoryName, reclassified: true });
   } catch (err) {
     console.error("Save user rule error:", err);
     return NextResponse.json({ error: "Internal error" }, { status: 500 });

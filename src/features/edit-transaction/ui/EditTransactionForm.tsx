@@ -95,7 +95,7 @@ export function EditTransactionForm({
         }
       }
 
-      // Save user rule if requested
+      // Save user rule if requested — also reclassifies existing matches
       if (saveRule) {
         const newCategory = categories.find((c) => c.id === categoryId);
         await fetch("/api/save-user-rule", {
@@ -109,6 +109,8 @@ export function EditTransactionForm({
             includeInIncome: ruleIncludeIncome,
           }),
         }).catch(() => {});
+        // Reclassification happened server-side, refresh everything
+        window.dispatchEvent(new CustomEvent("transactions-updated"));
       }
 
       onSaved();
