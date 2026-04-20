@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { CreditCard, ChevronDown, SlidersHorizontal, Search } from "lucide-react";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { cn } from "@/src/shared/lib/cn";
 import type { Category } from "@/src/entities/category";
@@ -52,6 +52,7 @@ export function TransactionFilters({
   onCardChange,
 }: TransactionFiltersProps) {
   const [showCategories, setShowCategories] = useState(false);
+  const [catSearch, setCatSearch] = useState("");
 
   const activeFilters =
     (selectedType ? 1 : 0) +
@@ -121,26 +122,45 @@ export function TransactionFilters({
         </button>
       </div>
 
-      {/* Row 2: Categories (collapsible) */}
+      {/* Row 2: Categories (collapsible with search) */}
       {showCategories && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide animate-fade-up">
-          <Chip
-            active={selectedCategory === null}
-            onClick={() => onCategoryChange(null)}
-          >
-            Todas
-          </Chip>
-          {categories.map((cat) => (
-            <Chip
-              key={cat.id}
-              active={selectedCategory === cat.id}
-              onClick={() =>
-                onCategoryChange(selectedCategory === cat.id ? null : cat.id)
-              }
-            >
-              <LucideIcon name={cat.icon} size={12} /> {cat.name}
-            </Chip>
-          ))}
+        <div className="space-y-2 animate-fade-up">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={catSearch}
+              onChange={(e) => setCatSearch(e.target.value)}
+              placeholder="Buscar categoria..."
+              className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+            />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
+            {categories
+              .filter((c) => c.name.toLowerCase().includes(catSearch.toLowerCase()))
+              .map((cat) => {
+                const isActive = selectedCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      onCategoryChange(selectedCategory === cat.id ? null : cat.id);
+                      setCatSearch("");
+                    }}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all border",
+                      isActive
+                        ? "text-white border-current"
+                        : "border-gray-100 text-gray-700 active:scale-95"
+                    )}
+                    style={isActive ? { backgroundColor: cat.color, borderColor: cat.color } : undefined}
+                  >
+                    <LucideIcon name={cat.icon} size={12} color={isActive ? "white" : cat.color} />
+                    <span className="truncate">{cat.name}</span>
+                  </button>
+                );
+              })}
+          </div>
         </div>
       )}
 

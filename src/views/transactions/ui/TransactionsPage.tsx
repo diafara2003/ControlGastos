@@ -176,7 +176,7 @@ export function TransactionsPage() {
         )}
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 overflow-y-auto max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-210px)]">
       <TransactionList
         transactions={filteredTransactions}
         loading={loading}

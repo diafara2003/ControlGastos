@@ -15,7 +15,8 @@ import {
 import { createClient } from "@/src/shared/api/supabase/client";
 import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
-import { BookOpen, ChevronRight } from "lucide-react";
+import { LucideIcon } from "@/src/shared/ui/lucide-icon";
+import { BookOpen, ChevronRight, Search, X } from "lucide-react";
 
 interface EditTransactionFormProps {
   transaction: Transaction;
@@ -47,6 +48,7 @@ export function EditTransactionForm({
     (transaction as Transaction & { exclude_from_totals?: boolean })
       .exclude_from_totals ?? false
   );
+  const [catSearch, setCatSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -198,17 +200,54 @@ export function EditTransactionForm({
             <label className="text-sm font-medium text-gray-700">
               Categoria
             </label>
-            <Select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-            >
-              <option value="">Sin categoria</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </Select>
+
+            {/* Selected category preview */}
+            {categoryId && (() => {
+              const sel = categories.find((c) => c.id === categoryId);
+              return sel ? (
+                <div className="mt-1 mb-2 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-medium text-white" style={{ backgroundColor: sel.color }}>
+                  <LucideIcon name={sel.icon} size={14} color="white" />
+                  {sel.name}
+                  <button type="button" onClick={() => setCategoryId("")} className="ml-auto">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : null;
+            })()}
+
+            {/* Search input */}
+            <div className="relative mt-1">
+              <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                placeholder="Buscar categoria..."
+                className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              />
+            </div>
+
+            {/* Category chips grid */}
+            <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-40 overflow-y-auto">
+              {categories
+                .filter((c) => c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                .map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => { setCategoryId(cat.id); setCatSearch(""); }}
+                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-medium transition-colors border ${
+                      categoryId === cat.id
+                        ? "border-current text-white"
+                        : "border-gray-100 text-gray-700"
+                    }`}
+                    style={categoryId === cat.id ? { backgroundColor: cat.color, borderColor: cat.color } : undefined}
+                  >
+                    <LucideIcon name={cat.icon} size={14} color={categoryId === cat.id ? "white" : cat.color} />
+                    {cat.name}
+                  </button>
+                ))}
+            </div>
           </div>
 
           <div>
