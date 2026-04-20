@@ -14,6 +14,8 @@ export const DEFAULT_CATEGORIES = [
   { name: "Pago tarjeta crédito", icon: "credit-card", color: "#0EA5E9" },
   { name: "Crédito vehículo", icon: "car", color: "#7C3AED" },
   { name: "Crédito hipotecario", icon: "home", color: "#0D9488" },
+  { name: "Papas", icon: "baby", color: "#F472B6" },
+  { name: "Cadenas", icon: "wallet", color: "#A78BFA" },
   { name: "Ingresos", icon: "trending-up", color: "#22C55E" },
   { name: "Otros", icon: "package", color: "#9CA3AF" },
 ] as const;

@@ -36,6 +36,8 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Pago tarjeta crédito (pago cuota, pago anticipado, abono a tarjeta de crédito)
 - Crédito vehículo (cuota de crédito de carro, leasing vehicular, pago préstamo vehículo)
 - Crédito hipotecario (cuota de vivienda, crédito hipotecario, leasing habitacional)
+- Papas (gastos relacionados con hijos: pañales, guardería, jardín, colegio hijos, ropa de niños, pediatra, leche, juguetes)
+- Cadenas (cuotas de cadenas comerciales: Flamingo, La 14 crédito, Alkosto crédito, cuota electrodomésticos, crédito rotativo comercial)
 - Transferencias (transferencias enviadas a personas)
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)
