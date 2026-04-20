@@ -87,22 +87,44 @@ export function AutoSync() {
     }
   }, [refreshAndStoreToken, MIN_SYNC_INTERVAL]);
 
-  useEffect(() => {
-    // Sync on app open (after 2s to let the UI load)
-    const initialSync = setTimeout(() => sync(20), 2000);
+  // Calculate how many emails to fetch based on days since last sync
+  const getAdaptiveMax = useCallback(async (): Promise<number> => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("email_accounts")
+      .select("last_sync_at")
+      .eq("is_active", true)
+      .limit(1);
 
-    // Sync when user returns to the app (tab/app becomes visible again)
+    if (!data || data.length === 0 || !data[0].last_sync_at) return 50;
+
+    const daysSince = (Date.now() - new Date(data[0].last_sync_at).getTime()) / (1000 * 60 * 60 * 24);
+    if (daysSince > 30) return 500;
+    if (daysSince > 14) return 200;
+    if (daysSince > 7) return 100;
+    if (daysSince > 1) return 50;
+    return 20;
+  }, []);
+
+  useEffect(() => {
+    // Sync on app open — adaptive based on days since last sync
+    const initialSync = setTimeout(async () => {
+      const max = await getAdaptiveMax();
+      sync(max);
+    }, 2000);
+
+    // Sync when user returns to the app
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        sync(10);
+        sync(20);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // Periodic sync every 2 minutes (ensures mobile stays updated)
+    // Periodic sync every 2 minutes
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
-        sync(5);
+        sync(20);
       }
     }, 2 * 60 * 1000);
 
@@ -111,7 +133,7 @@ export function AutoSync() {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
-  }, [sync]);
+  }, [sync, getAdaptiveMax]);
 
   return null;
 }
