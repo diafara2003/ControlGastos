@@ -38,6 +38,7 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Crédito hipotecario (cuota de vivienda, crédito hipotecario, leasing habitacional)
 - Papas (gastos relacionados con hijos: pañales, guardería, jardín, colegio hijos, ropa de niños, pediatra, leche, juguetes)
 - Cadenas (cuotas de cadenas comerciales: Flamingo, La 14 crédito, Alkosto crédito, cuota electrodomésticos, crédito rotativo comercial)
+- Administración apto (administración apartamento, cuota administración, conjunto residencial, propiedad horizontal)
 - Transferencias (transferencias enviadas a personas)
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)

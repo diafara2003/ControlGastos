@@ -16,6 +16,7 @@ export const DEFAULT_CATEGORIES = [
   { name: "Crédito hipotecario", icon: "home", color: "#0D9488" },
   { name: "Papas", icon: "users", color: "#F472B6" },
   { name: "Cadenas", icon: "wallet", color: "#A78BFA" },
+  { name: "Administración apto", icon: "home", color: "#64748B" },
   { name: "Ingresos", icon: "trending-up", color: "#22C55E" },
   { name: "Otros", icon: "package", color: "#9CA3AF" },
 ] as const;
