@@ -33,7 +33,9 @@ Categorías disponibles (usa EXACTAMENTE uno de estos nombres):
 - Educación (universidad, Platzi, Coursera, colegios)
 - Efectivo (pagos en efectivo, dinero en mano)
 - Retiro cajero (retiros en cajeros automáticos, ATM, Servibanca, cajero red)
-- Pago tarjeta crédito (pago cuota, pago anticipado, abono a tarjeta de crédito o préstamo)
+- Pago tarjeta crédito (pago cuota, pago anticipado, abono a tarjeta de crédito)
+- Crédito vehículo (cuota de crédito de carro, leasing vehicular, pago préstamo vehículo)
+- Crédito hipotecario (cuota de vivienda, crédito hipotecario, leasing habitacional)
 - Transferencias (transferencias enviadas a personas)
 - Ingresos (nómina, salario, consignaciones, transferencias recibidas)
 - Otros (si no encaja en ninguna)
@@ -47,6 +49,8 @@ Reglas CRÍTICAS (nunca violar):
 - "te enviaron", "recibiste", "abono", "consignación", "nómina" → type = "income"
 - "retiraste", "retiro", "cajero", "ATM", "Servibanca" → type = "expense", categoría = "Retiro cajero"
 - "pago anticipado", "pago cuota anticipada", "abono a tarjeta", "pago tarjeta" → type = "expense", categoría = "Pago tarjeta crédito"
+- "cuota préstamo", "cuota crédito", "pago préstamo vehículo", "leasing vehicular" → type = "expense", categoría = "Crédito vehículo"
+- "cuota vivienda", "crédito hipotecario", "leasing habitacional" → type = "expense", categoría = "Crédito hipotecario"
 - cardLastFour: extraer los últimos 4 dígitos de la cuenta o tarjeta. Formatos posibles: "*1036", "T.Deb *1036", "cuenta **3181", "cuenta Nro.******* 6635", "tarjeta ...4532"
 - merchant debe ser el comercio, persona o entidad (NO el banco emisor)
 - Si el merchant es un código raro (ej: KS*PAGSEGURO), intenta deducir el comercio real
