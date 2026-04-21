@@ -42,8 +42,8 @@ function getWeekendSummary(
   const satKey = saturday.toISOString().split("T")[0];
   const sunKey = sunday.toISOString().split("T")[0];
 
-  // Show banner on Saturday. On Sunday, only if Saturday has no transactions.
-  if (day === 0 && (grouped[satKey]?.length ?? 0) > 0) return null;
+  // Show banner on Sunday (first in desc order). On Saturday, only if Sunday has no transactions.
+  if (day === 6 && (grouped[sunKey]?.length ?? 0) > 0) return null;
 
   const all = [...(grouped[satKey] ?? []), ...(grouped[sunKey] ?? [])];
   if (all.length === 0) return null;
@@ -133,7 +133,7 @@ export function TransactionList({
 
         return (
           <div key={date}>
-            {/* Weekend summary banner — only on Saturday */}
+            {/* Weekend summary — before Sunday (first day in desc order) */}
             {weekendSummary && (() => {
               const wkBalance = weekendSummary.income - weekendSummary.expenses;
               const overspent = weekendSummary.expenses > weekendSummary.income && weekendSummary.income > 0;
@@ -150,7 +150,7 @@ export function TransactionList({
                     <p className={`text-xs font-semibold ${
                       isNegative ? "text-rose-700 dark:text-rose-300" : "text-purple-700 dark:text-purple-300"
                     }`}>
-                      Fin de semana
+                      Resumen fin de semana
                     </p>
                     <p className={`text-sm font-bold tabular-nums ${
                       wkBalance >= 0
@@ -211,6 +211,7 @@ export function TransactionList({
                 />
               ))}
             </div>
+
           </div>
         );
       })}
