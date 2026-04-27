@@ -9,6 +9,7 @@ import {
   Minus,
   ArrowUpRight,
   ArrowDownRight,
+  ArrowDownLeft,
   Store,
   BarChart3,
   DollarSign,
@@ -17,10 +18,13 @@ import {
   Banknote,
   CheckCircle2,
   AlertTriangle,
+  Handshake,
 } from "lucide-react";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { createClient } from "@/src/shared/api/supabase/client";
 import { getTransactions } from "@/src/entities/transaction";
+import { getPrestamos } from "@/src/entities/prestamo";
+import type { Prestamo } from "@/src/entities/prestamo";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import type { Transaction } from "@/src/entities/transaction";
@@ -77,6 +81,7 @@ export function ReportsPage() {
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const [expandedWithdrawal, setExpandedWithdrawal] = useState<string | null>(null);
   const [withdrawalDetails, setWithdrawalDetails] = useState<Record<string, { description: string; amount: number }[]>>({});
+  const [allPrestamos, setAllPrestamos] = useState<Prestamo[]>([]);
   const { selectedAccount, accounts: bankAccounts } = useAccountFilter();
 
   const isCurrentMonth =
@@ -111,13 +116,15 @@ export function ReportsPage() {
       const prevStart = startOfMonth(prevDate).toISOString();
       const prevEnd = endOfMonth(prevDate).toISOString();
 
-      const [txns, prev] = await Promise.all([
+      const [txns, prev, prestamosData] = await Promise.all([
         getTransactions({ startDate: start, endDate: end }),
         getTransactions({ startDate: prevStart, endDate: prevEnd }),
+        getPrestamos(),
       ]);
 
       setTransactions(txns);
       setPrevTransactions(prev);
+      setAllPrestamos(prestamosData);
 
       // Load withdrawal details for resolved withdrawals
       const withdrawalTxnIds = txns
@@ -758,6 +765,11 @@ export function ReportsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* ============================================================
+              7. Prestamos
+              ============================================================ */}
+          <PrestamosReportSection prestamos={allPrestamos} />
         </div>
       )}
       </div>
@@ -824,5 +836,125 @@ function ComparisonRow({
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-component: Prestamos report section
+// ---------------------------------------------------------------------------
+
+function PrestamosReportSection({ prestamos }: { prestamos: Prestamo[] }) {
+  if (prestamos.length === 0) return null;
+
+  const active = prestamos.filter((p) => p.status !== "completed");
+  const dados = active.filter((p) => p.type === "dado");
+  const recibidos = active.filter((p) => p.type === "recibido");
+
+  const totalDado = dados.reduce((s, p) => s + p.amount, 0);
+  const paidDado = dados.reduce(
+    (s, p) => s + (p.payments ?? []).reduce((ps, pay) => ps + pay.amount, 0),
+    0
+  );
+  const pendingDado = totalDado - paidDado;
+
+  const totalRecibido = recibidos.reduce((s, p) => s + p.amount, 0);
+  const paidRecibido = recibidos.reduce(
+    (s, p) => s + (p.payments ?? []).reduce((ps, pay) => ps + pay.amount, 0),
+    0
+  );
+  const pendingRecibido = totalRecibido - paidRecibido;
+
+  return (
+    <Card className="md:col-span-2">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Handshake className="h-4 w-4 text-emerald-600" />
+          Préstamos activos
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 space-y-1">
+            <div className="flex items-center gap-1.5">
+              <ArrowUpRight className="h-3.5 w-3.5 text-blue-600" />
+              <span className="text-xs font-medium text-blue-600">Yo presto</span>
+            </div>
+            <p className="text-sm font-bold text-blue-700 tabular-nums">
+              {formatCOP(totalDado)}
+            </p>
+            <p className="text-[11px] text-blue-500">
+              Cobrado: {formatCOP(paidDado)}
+            </p>
+            <p className="text-[11px] text-blue-500">
+              Pendiente: {formatCOP(pendingDado)}
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3 space-y-1">
+            <div className="flex items-center gap-1.5">
+              <ArrowDownLeft className="h-3.5 w-3.5 text-violet-600" />
+              <span className="text-xs font-medium text-violet-600">Me prestan</span>
+            </div>
+            <p className="text-sm font-bold text-violet-700 tabular-nums">
+              {formatCOP(totalRecibido)}
+            </p>
+            <p className="text-[11px] text-violet-500">
+              Pagado: {formatCOP(paidRecibido)}
+            </p>
+            <p className="text-[11px] text-violet-500">
+              Por pagar: {formatCOP(pendingRecibido)}
+            </p>
+          </div>
+        </div>
+
+        {active.length > 0 && (
+          <div className="space-y-2">
+            {active.map((p) => {
+              const paid = (p.payments ?? []).reduce((s, pay) => s + pay.amount, 0);
+              const pct = p.amount > 0 ? (paid / p.amount) * 100 : 0;
+              return (
+                <div key={p.id} className="flex items-center gap-3">
+                  <span className={`flex h-6 w-6 items-center justify-center rounded-lg shrink-0 ${
+                    p.type === "dado" ? "bg-blue-50" : "bg-violet-50"
+                  }`}>
+                    {p.type === "dado" ? (
+                      <ArrowUpRight className="h-3 w-3 text-blue-600" />
+                    ) : (
+                      <ArrowDownLeft className="h-3 w-3 text-violet-600" />
+                    )}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 truncate">{p.contact_name}</p>
+                    <div className="h-1.5 rounded-full bg-gray-100 mt-1 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          p.type === "dado" ? "bg-blue-500" : "bg-violet-500"
+                        }`}
+                        style={{ width: `${Math.min(pct, 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-semibold text-gray-800 tabular-nums">
+                      {formatCOP(p.amount)}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {pct.toFixed(0)}% abonado
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <a
+          href="/prestamos"
+          className="block text-center text-xs font-medium text-emerald-600 pt-1"
+        >
+          Ver todos los préstamos
+        </a>
+      </CardContent>
+    </Card>
   );
 }
