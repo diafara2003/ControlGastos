@@ -65,7 +65,6 @@ export function SettingsPage() {
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [showConnectForm, setShowConnectForm] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [syncResult, setSyncResult] = useState<string | null>(null);
   const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
@@ -140,25 +139,14 @@ export function SettingsPage() {
     }
   }, [toast]);
 
-  const handleSync = async () => {
+  const handleSync = () => {
     setSyncing(true);
-    setSyncResult(null);
-    try {
-      const res = await fetch("/api/sync", { method: "POST" });
-      const data = await res.json();
-      if (res.ok) {
-        setSyncResult(
-          `Sincronizado: ${data.totalCreated ?? 0} nuevas transacciones`
-        );
-        loadAccounts(); // Refresh to show updated last_sync_at
-      } else {
-        setSyncResult(`Error: ${data.error ?? "Error desconocido"}`);
-      }
-    } catch {
-      setSyncResult("Error de conexión al sincronizar");
-    } finally {
+    window.dispatchEvent(new CustomEvent("trigger-sync"));
+    // Re-enable button after a short delay; AutoSync handles the rest
+    setTimeout(() => {
       setSyncing(false);
-    }
+      loadAccounts();
+    }, 5000);
   };
 
   const handleDisconnect = async (accountId: string) => {
@@ -485,9 +473,9 @@ export function SettingsPage() {
                 </>
               )}
             </Button>
-            {syncResult && (
-              <p className="text-sm text-center text-gray-600">{syncResult}</p>
-            )}
+            <p className="text-xs text-gray-400 text-center">
+              El progreso se muestra en la barra superior
+            </p>
           </CardContent>
         </Card>
       )}

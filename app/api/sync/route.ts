@@ -3,6 +3,7 @@ export const maxDuration = 60;
 
 import { NextResponse } from "next/server";
 import { createClient } from "@/src/shared/api/supabase/server";
+import { syncAllAccounts } from "@/app/api/cron/sync-emails/route";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -17,33 +18,5 @@ export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
   const maxEmails = parseInt(searchParams.get("maxEmails") ?? "20", 10);
 
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-  try {
-    const res = await fetch(`${appUrl}/api/cron/sync-emails`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.CRON_SECRET}`,
-      },
-      body: JSON.stringify({ userId: user.id, maxEmails }),
-    });
-
-    const text = await res.text();
-    try {
-      const data = JSON.parse(text);
-      return NextResponse.json(data, { status: res.status });
-    } catch {
-      return NextResponse.json(
-        { error: "Sync error", details: text.slice(0, 200) },
-        { status: 500 }
-      );
-    }
-  } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Sync failed" },
-      { status: 500 }
-    );
-  }
+  return syncAllAccounts(user.id, maxEmails);
 }

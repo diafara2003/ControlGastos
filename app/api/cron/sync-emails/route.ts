@@ -58,7 +58,7 @@ function adjustPayrollDate(parsed: { type: string; description: string | null; m
   return txDate;
 }
 
-async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
+export async function syncAllAccounts(filterUserId?: string, maxEmails: number = 20) {
   const supabase = createServiceClient();
   const results: {
     accountId: string;

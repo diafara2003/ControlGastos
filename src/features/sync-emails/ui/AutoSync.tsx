@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { RefreshCw, Check, AlertCircle, Mail } from "lucide-react";
+
+type SyncStatus = "idle" | "syncing" | "success" | "error";
+type SyncResult = { created: number; processed: number } | null;
 
 export function AutoSync() {
   const syncingRef = useRef(false);
   const registeredRef = useRef(false);
   const lastSyncRef = useRef<number>(0);
+  const [status, setStatus] = useState<SyncStatus>("idle");
+  const [result, setResult] = useState<SyncResult>(null);
 
-  // Minimum 2 minutes between syncs to avoid spamming
   const MIN_SYNC_INTERVAL = 2 * 60 * 1000;
 
   const refreshAndStoreToken = useCallback(async () => {
@@ -54,7 +59,6 @@ export function AutoSync() {
   const sync = useCallback(async (maxEmails: number) => {
     if (syncingRef.current) return;
 
-    // Respect minimum interval between syncs
     const now = Date.now();
     if (now - lastSyncRef.current < MIN_SYNC_INTERVAL) return;
 
@@ -74,20 +78,28 @@ export function AutoSync() {
 
     syncingRef.current = true;
     lastSyncRef.current = now;
+    setStatus("syncing");
+    setResult(null);
     try {
       const res = await fetch(`/api/sync?maxEmails=${maxEmails}`, { method: "POST" });
       const data = await res.json().catch(() => null);
-      if (data?.results?.some((r: { created?: number }) => (r.created ?? 0) > 0)) {
+
+      const created = data?.totalCreated ?? 0;
+      const processed = data?.results?.reduce((s: number, r: { processed?: number }) => s + (r.processed ?? 0), 0) ?? 0;
+
+      setResult({ created, processed });
+      setStatus(res.ok ? "success" : "error");
+
+      if (created > 0) {
         window.dispatchEvent(new CustomEvent("transactions-updated"));
       }
     } catch {
-      // Silently fail
+      setStatus("error");
     } finally {
       syncingRef.current = false;
     }
   }, [refreshAndStoreToken, MIN_SYNC_INTERVAL]);
 
-  // Calculate how many emails to fetch based on days since last sync
   const getAdaptiveMax = useCallback(async (): Promise<number> => {
     const supabase = createClient();
     const { data } = await supabase
@@ -107,13 +119,20 @@ export function AutoSync() {
   }, []);
 
   useEffect(() => {
-    // Sync on app open — adaptive based on days since last sync
+    const handleManualSync = () => {
+      lastSyncRef.current = 0;
+      sync(20);
+    };
+    window.addEventListener("trigger-sync", handleManualSync);
+    return () => window.removeEventListener("trigger-sync", handleManualSync);
+  }, [sync]);
+
+  useEffect(() => {
     const initialSync = setTimeout(async () => {
       const max = await getAdaptiveMax();
       sync(max);
     }, 2000);
 
-    // Sync when user returns to the app
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         sync(20);
@@ -121,7 +140,6 @@ export function AutoSync() {
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // Periodic sync every 2 minutes
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         sync(20);
@@ -135,5 +153,74 @@ export function AutoSync() {
     };
   }, [sync, getAdaptiveMax]);
 
-  return null;
+  // Auto-hide success/error after delay
+  useEffect(() => {
+    if (status === "success" || status === "error") {
+      const timer = setTimeout(() => setStatus("idle"), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
+
+  if (status === "idle") return null;
+
+  const getMessage = () => {
+    if (status === "syncing") return "Sincronizando correos...";
+    if (status === "error") return "Error al sincronizar";
+    if (!result) return "";
+    if (result.created > 0) return `${result.created} nueva${result.created > 1 ? "s" : ""} transacci${result.created > 1 ? "ones" : "on"}`;
+    if (result.processed > 0) return "Todo al dia";
+    return "Sin correos nuevos";
+  };
+
+  const Icon = status === "syncing" ? RefreshCw : status === "success" ? (result?.created ? Mail : Check) : AlertCircle;
+
+  return (
+    <>
+      {/* Thin progress bar at the very top */}
+      {status === "syncing" && (
+        <div className="fixed top-0 left-0 right-0 z-[60] h-1 bg-emerald-100 overflow-hidden">
+          <div className="h-full bg-emerald-500 animate-[progress_2s_ease-in-out_infinite] rounded-full" />
+        </div>
+      )}
+
+      {/* Floating pill notification */}
+      <div
+        className={`
+          fixed top-3 left-1/2 -translate-x-1/2 z-[55]
+          flex items-center gap-2 px-4 py-2 rounded-full shadow-lg
+          text-sm font-medium backdrop-blur-sm
+          transition-all duration-500 ease-out
+          ${status === "syncing"
+            ? "bg-white/90 text-gray-700 border border-gray-200"
+            : status === "success"
+            ? result?.created
+              ? "bg-emerald-500 text-white"
+              : "bg-white/90 text-gray-600 border border-gray-200"
+            : "bg-red-500 text-white"
+          }
+          animate-[slideDown_0.3s_ease-out]
+        `}
+      >
+        <Icon className={`h-3.5 w-3.5 flex-shrink-0 ${status === "syncing" ? "animate-spin" : ""}`} />
+        <span>{getMessage()}</span>
+        {status === "success" && result?.created ? (
+          <span className="ml-1 bg-white/20 rounded-full px-2 py-0.5 text-xs">
+            +{result.created}
+          </span>
+        ) : null}
+      </div>
+
+      <style jsx>{`
+        @keyframes progress {
+          0% { width: 0%; margin-left: 0; }
+          50% { width: 70%; margin-left: 15%; }
+          100% { width: 0%; margin-left: 100%; }
+        }
+        @keyframes slideDown {
+          from { opacity: 0; transform: translate(-50%, -20px); }
+          to { opacity: 1; transform: translate(-50%, 0); }
+        }
+      `}</style>
+    </>
+  );
 }
