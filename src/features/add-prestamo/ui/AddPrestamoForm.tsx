@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/src/shared/ui/dialog";
 import { createPrestamo, getDistinctContacts } from "@/src/entities/prestamo";
+import { formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import type { PrestamoType } from "@/src/entities/prestamo";
 
 interface AddPrestamoFormProps {
@@ -141,15 +142,10 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="100000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+              placeholder="100.000"
+              value={formatCOPInput(amount)}
+              onChange={(e) => setAmount(rawDigits(e.target.value))}
             />
-            {amount && (
-              <p className="mt-0.5 text-xs text-gray-400">
-                ${parseInt(amount || "0").toLocaleString("es-CO")}
-              </p>
-            )}
           </div>
 
           <div>

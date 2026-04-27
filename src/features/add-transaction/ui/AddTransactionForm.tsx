@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/src/shared/ui/dialog";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import type { Category } from "@/src/entities/category";
 
 interface AddTransactionFormProps {
@@ -119,19 +120,10 @@ export function AddTransactionForm({
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="50000"
-              value={amount}
-              onChange={(e) => {
-                const val = e.target.value.replace(/\D/g, "");
-                setAmount(val);
-              }}
+              placeholder="50.000"
+              value={formatCOPInput(amount)}
+              onChange={(e) => setAmount(rawDigits(e.target.value))}
             />
-            {amount && (
-              <p className="mt-0.5 text-xs text-gray-400">
-                $
-                {parseInt(amount || "0").toLocaleString("es-CO")}
-              </p>
-            )}
           </div>
 
           <div>

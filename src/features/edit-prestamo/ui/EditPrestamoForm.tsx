@@ -19,7 +19,7 @@ import {
   deletePayment,
 } from "@/src/entities/prestamo";
 import type { Prestamo } from "@/src/entities/prestamo";
-import { formatCOP } from "@/src/shared/lib/currency";
+import { formatCOP, formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import { formatShortDate } from "@/src/shared/lib/date";
 
 interface EditPrestamoFormProps {
@@ -212,14 +212,9 @@ export function EditPrestamoForm({
                   type="text"
                   inputMode="numeric"
                   placeholder="Monto del abono"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value.replace(/\D/g, ""))}
+                  value={formatCOPInput(paymentAmount)}
+                  onChange={(e) => setPaymentAmount(rawDigits(e.target.value))}
                 />
-                {paymentAmount && (
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    ${parseInt(paymentAmount || "0").toLocaleString("es-CO")}
-                  </p>
-                )}
               </div>
               <Input
                 type="date"

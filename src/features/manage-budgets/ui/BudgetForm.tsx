@@ -5,6 +5,7 @@ import { Button } from "@/src/shared/ui/button";
 import { Input } from "@/src/shared/ui/input";
 import { Select } from "@/src/shared/ui/select";
 import { Spinner } from "@/src/shared/ui/spinner";
+import { formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import {
   Dialog,
   DialogContent,
@@ -115,17 +116,10 @@ export function BudgetForm({
             <Input
               type="text"
               inputMode="numeric"
-              placeholder="200000"
-              value={amountLimit}
-              onChange={(e) => {
-                setAmountLimit(e.target.value.replace(/\D/g, ""));
-              }}
+              placeholder="200.000"
+              value={formatCOPInput(amountLimit)}
+              onChange={(e) => setAmountLimit(rawDigits(e.target.value))}
             />
-            {amountLimit && (
-              <p className="mt-0.5 text-xs text-gray-400">
-                ${parseInt(amountLimit || "0").toLocaleString("es-CO")}
-              </p>
-            )}
           </div>
 
           <div className="flex gap-2 pt-2">

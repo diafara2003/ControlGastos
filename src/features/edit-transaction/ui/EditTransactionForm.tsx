@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/src/shared/ui/dialog";
 import { createClient } from "@/src/shared/api/supabase/client";
+import { formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
@@ -37,7 +38,7 @@ export function EditTransactionForm({
   const [merchant, setMerchant] = useState(transaction.merchant);
   const [notes, setNotes] = useState(transaction.notes ?? "");
   const [isVerified, setIsVerified] = useState(transaction.is_verified);
-  const [amount, setAmount] = useState(transaction.amount);
+  const [amount, setAmount] = useState(String(transaction.amount));
   const [type, setType] = useState<"expense" | "income">(
     transaction.type as "expense" | "income"
   );
@@ -70,7 +71,7 @@ export function EditTransactionForm({
         merchant,
         notes: notes || null,
         is_verified: isVerified,
-        amount,
+        amount: parseInt(amount, 10) || 0,
         type,
         transaction_date: new Date(
           transactionDate + "T12:00:00"
@@ -166,11 +167,10 @@ export function EditTransactionForm({
             <div>
               <label className="text-sm font-medium text-gray-700">Monto</label>
               <Input
-                type="number"
-                min={0}
-                step={1}
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={formatCOPInput(amount)}
+                onChange={(e) => setAmount(rawDigits(e.target.value))}
               />
             </div>
             <div>
