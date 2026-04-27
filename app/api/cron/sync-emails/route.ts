@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/src/shared/api/supabase/service";
 import { fetchImapEmails } from "@/src/features/sync-emails/lib/imap";
+import { fetchGmailEmails } from "@/src/features/sync-emails/lib/gmail";
 import { fetchOutlookGraphEmails } from "@/src/features/sync-emails/lib/outlook-graph";
 import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { sendPushToUser } from "@/src/shared/lib/push-sender";
@@ -114,6 +115,8 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       let emails;
       if (account.imap_host && account.imap_password_encrypted) {
         emails = await fetchImapEmails(account, maxEmails);
+      } else if (account.provider === "gmail" && account.access_token_encrypted) {
+        emails = await fetchGmailEmails(account, maxEmails);
       } else if (account.provider === "outlook" && account.provider_token_encrypted) {
         emails = await fetchOutlookGraphEmails(
           account.provider_token_encrypted,
