@@ -78,6 +78,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
     aiParsed: number;
     created: number;
     errors: string[];
+    debugEmails?: { subject: string; from: string; snippetLen: number; bodyLen: number; snippet: string }[];
   }[] = [];
 
   // Fetch active email accounts
@@ -201,6 +202,14 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
         results.push(logEntry);
         continue;
       }
+
+      logEntry.debugEmails = newEmailsList.map((e) => ({
+        subject: e.subject,
+        from: e.from,
+        snippetLen: (e.snippet ?? "").length,
+        bodyLen: e.bodyText.trim().length,
+        snippet: (e.snippet ?? "").slice(0, 150),
+      }));
 
       // 3. Parse + classify emails with AI (single call per email)
       console.log(`Parsing ${newEmailsList.length} new emails with AI (${existingIds.size} already processed)...`);
