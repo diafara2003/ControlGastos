@@ -28,7 +28,8 @@ import type { Prestamo } from "@/src/entities/prestamo";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import type { Transaction } from "@/src/entities/transaction";
-import { startOfMonth, endOfMonth, getMonthName, formatShortDate } from "@/src/shared/lib/date";
+import { formatShortDate } from "@/src/shared/lib/date";
+import { useCycleConfig } from "@/src/shared/context/cycle-config";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { Button } from "@/src/shared/ui/button";
 
@@ -52,18 +53,6 @@ interface MerchantFrequency {
   total: number;
 }
 
-function daysInMonth(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-}
-
-function daysElapsed(date: Date): number {
-  const now = new Date();
-  const isCurrent =
-    date.getMonth() === now.getMonth() &&
-    date.getFullYear() === now.getFullYear();
-  return isCurrent ? now.getDate() : daysInMonth(date);
-}
-
 function pctChange(current: number, previous: number): number | null {
   if (previous === 0) return current === 0 ? 0 : null;
   return ((current - previous) / previous) * 100;
@@ -74,6 +63,7 @@ function pctChange(current: number, previous: number): number | null {
 // ---------------------------------------------------------------------------
 
 export function ReportsPage() {
+  const cycle = useCycleConfig();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [prevTransactions, setPrevTransactions] = useState<Transaction[]>([]);
@@ -84,37 +74,26 @@ export function ReportsPage() {
   const [allPrestamos, setAllPrestamos] = useState<Prestamo[]>([]);
   const { selectedAccount, accounts: bankAccounts } = useAccountFilter();
 
-  const isCurrentMonth =
-    selectedDate.getMonth() === new Date().getMonth() &&
-    selectedDate.getFullYear() === new Date().getFullYear();
+  const isCurrentMonth = cycle.isCurrentPeriod(selectedDate);
 
   const goToPreviousMonth = () => {
-    setSelectedDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() - 1);
-      return d;
-    });
+    setSelectedDate((prev) => cycle.previousPeriod(prev));
   };
 
   const goToNextMonth = () => {
     if (isCurrentMonth) return;
-    setSelectedDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() + 1);
-      return d;
-    });
+    setSelectedDate((prev) => cycle.nextPeriod(prev));
   };
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const start = startOfMonth(selectedDate).toISOString();
-      const end = endOfMonth(selectedDate).toISOString();
+      const start = cycle.periodStart(selectedDate).toISOString();
+      const end = cycle.periodEnd(selectedDate).toISOString();
 
-      const prevDate = new Date(selectedDate);
-      prevDate.setMonth(prevDate.getMonth() - 1);
-      const prevStart = startOfMonth(prevDate).toISOString();
-      const prevEnd = endOfMonth(prevDate).toISOString();
+      const prevDate = cycle.previousPeriod(selectedDate);
+      const prevStart = cycle.periodStart(prevDate).toISOString();
+      const prevEnd = cycle.periodEnd(prevDate).toISOString();
 
       const [txns, prev, prestamosData] = await Promise.all([
         getTransactions({ startDate: start, endDate: end }),
@@ -156,7 +135,7 @@ export function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, cycle]);
 
   useEffect(() => {
     load();
@@ -248,9 +227,9 @@ export function ReportsPage() {
   }, [expenses]);
 
   // Average daily spending
-  const elapsed = daysElapsed(selectedDate);
+  const elapsed = cycle.daysElapsed(selectedDate);
   const avgDaily = elapsed > 0 ? totalExpenses / elapsed : 0;
-  const projectedTotal = avgDaily * daysInMonth(selectedDate);
+  const projectedTotal = avgDaily * cycle.daysInPeriod(selectedDate);
 
   // Transactions grouped by category (for accordion)
   const transactionsByCategory = useMemo(() => {
@@ -297,8 +276,9 @@ export function ReportsPage() {
   }, [expenses]);
 
   // Month label
-  const monthName = getMonthName(selectedDate);
-  const year = selectedDate.getFullYear();
+  const monthName = cycle.periodMonthName(selectedDate);
+  const pEnd = cycle.periodEnd(selectedDate);
+  const year = pEnd.getFullYear();
   const showYear = year !== new Date().getFullYear();
 
   // ---- Render ----

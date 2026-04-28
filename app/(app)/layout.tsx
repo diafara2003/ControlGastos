@@ -7,9 +7,11 @@ import { NotificationPrompt } from "@/src/features/push-notifications";
 import { CreditCardCheck } from "@/src/features/credit-card-setup";
 import { BankAccountSetup } from "@/src/features/bank-account-setup";
 import { AccountFilterProvider } from "@/src/shared/context/account-filter";
+import { CycleConfigProvider } from "@/src/shared/context/cycle-config";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
+    <CycleConfigProvider>
     <AccountFilterProvider>
     <div className="min-h-dvh">
       <AutoSync />
@@ -29,5 +31,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <BankAccountSetup />
     </div>
     </AccountFilterProvider>
+    </CycleConfigProvider>
   );
 }

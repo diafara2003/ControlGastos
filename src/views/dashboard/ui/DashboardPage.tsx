@@ -7,18 +7,19 @@ import { SavingsGoal } from "@/src/widgets/savings-goal";
 import { getTransactions } from "@/src/entities/transaction";
 import { createClient } from "@/src/shared/api/supabase/client";
 import type { Transaction } from "@/src/entities/transaction";
-import { startOfMonth, endOfMonth, getMonthName } from "@/src/shared/lib/date";
+import { useCycleConfig } from "@/src/shared/context/cycle-config";
 
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { WithdrawalAlert } from "@/src/features/withdrawal-details/ui/WithdrawalAlert";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
 
 const HISTORY_MONTHS = 3;
 const ALERT_THRESHOLD = 1.15; // 15% over historical average
 
 export function DashboardPage() {
   const { selectedAccount, accounts } = useAccountFilter();
+  const cycle = useCycleConfig();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totals, setTotals] = useState({ income: 0, expenses: 0 });
@@ -29,49 +30,38 @@ export function DashboardPage() {
   const [totalBudgets, setTotalBudgets] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const isCurrentMonth =
-    selectedDate.getMonth() === new Date().getMonth() &&
-    selectedDate.getFullYear() === new Date().getFullYear();
+  const isCurrent = cycle.isCurrentPeriod(selectedDate);
 
   const goToPreviousMonth = () => {
-    setSelectedDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() - 1);
-      return d;
-    });
+    setSelectedDate((prev) => cycle.previousPeriod(prev));
   };
 
   const goToNextMonth = () => {
-    if (isCurrentMonth) return;
-    setSelectedDate((prev) => {
-      const d = new Date(prev);
-      d.setMonth(d.getMonth() + 1);
-      return d;
-    });
+    if (isCurrent) return;
+    setSelectedDate((prev) => cycle.nextPeriod(prev));
   };
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const start = startOfMonth(selectedDate).toISOString();
-      const end = endOfMonth(selectedDate).toISOString();
+      const start = cycle.periodStart(selectedDate).toISOString();
+      const end = cycle.periodEnd(selectedDate).toISOString();
 
       // Previous N months window for historical baseline
-      const historyStart = new Date(selectedDate);
-      historyStart.setMonth(historyStart.getMonth() - HISTORY_MONTHS);
-      historyStart.setDate(1);
-      historyStart.setHours(0, 0, 0, 0);
-
-      const historyEnd = new Date(selectedDate);
-      historyEnd.setDate(0); // last day of previous month
-      historyEnd.setHours(23, 59, 59, 999);
+      let histRef = selectedDate;
+      for (let i = 0; i < HISTORY_MONTHS; i++) {
+        histRef = cycle.previousPeriod(histRef);
+      }
+      const historyStartISO = cycle.periodStart(histRef).toISOString();
+      const prevPeriodDate = cycle.previousPeriod(selectedDate);
+      const historyEndISO = cycle.periodEnd(prevPeriodDate).toISOString();
 
       const supabase = createClient();
       const [txns, history, profileRes, budgetsRes] = await Promise.all([
         getTransactions({ startDate: start, endDate: end }),
         getTransactions({
-          startDate: historyStart.toISOString(),
-          endDate: historyEnd.toISOString(),
+          startDate: historyStartISO,
+          endDate: historyEndISO,
         }).catch(() => []),
         supabase.auth.getUser().then(({ data: { user } }) =>
           user
@@ -102,31 +92,22 @@ export function DashboardPage() {
         .reduce((sum, t) => sum + t.amount, 0);
       setTotals({ income, expenses });
 
-      // Compare vs last month up to the same day
-      const now = new Date();
-      const currentDay = isCurrentMonth ? now.getDate() : new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0).getDate();
+      // Compare vs last month up to the same elapsed days
+      const periodDays = cycle.daysInPeriod(selectedDate);
+      const elapsed = cycle.daysElapsed(selectedDate);
+      const currentDay = isCurrent ? elapsed : periodDays;
 
-      const prevMonth = new Date(selectedDate);
-      prevMonth.setMonth(prevMonth.getMonth() - 1);
-      const prevMonthStart = startOfMonth(prevMonth);
-      const prevMonthSameDay = new Date(
-        prevMonth.getFullYear(),
-        prevMonth.getMonth(),
-        Math.min(
-          currentDay,
-          new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0).getDate()
-        ),
-        23,
-        59,
-        59
+      const prevPeriodStart = cycle.periodStart(prevPeriodDate);
+      const prevPeriodSameDay = new Date(
+        prevPeriodStart.getTime() + currentDay * 24 * 60 * 60 * 1000
       );
 
       const lastMonthExpenses = filteredHistory
         .filter(
           (t) =>
             t.type === "expense" &&
-            new Date(t.transaction_date) >= prevMonthStart &&
-            new Date(t.transaction_date) <= prevMonthSameDay
+            new Date(t.transaction_date) >= prevPeriodStart &&
+            new Date(t.transaction_date) <= prevPeriodSameDay
         )
         .reduce((sum, t) => sum + t.amount, 0);
       setLastMonthSameDay(lastMonthExpenses);
@@ -152,14 +133,8 @@ export function DashboardPage() {
         historicalByCategory.set(t.category.id, entry);
       }
 
-      // Current by category (projected to end of month)
-      const daysInMonth = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth() + 1,
-        0
-      ).getDate();
-      const dayElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
-      const projectionFactor = dayElapsed > 0 ? daysInMonth / dayElapsed : 1;
+      // Current by category (projected to end of period)
+      const projectionFactor = elapsed > 0 ? periodDays / elapsed : 1;
 
       const currentByCategory = new Map<string, number>();
       for (const t of txns) {
@@ -197,7 +172,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, isCurrentMonth, selectedAccount, accounts]);
+  }, [selectedDate, isCurrent, selectedAccount, accounts, cycle]);
 
   useEffect(() => {
     load();
@@ -213,8 +188,9 @@ export function DashboardPage() {
     };
   }, [load]);
 
-  const monthName = getMonthName(selectedDate);
-  const year = selectedDate.getFullYear();
+  const monthName = cycle.periodMonthName(selectedDate);
+  const pEnd = cycle.periodEnd(selectedDate);
+  const year = pEnd.getFullYear();
   const showYear = year !== new Date().getFullYear();
   const hasData = transactions.length > 0;
 
@@ -235,15 +211,39 @@ export function DashboardPage() {
         </h1>
         <button
           onClick={goToNextMonth}
-          disabled={isCurrentMonth}
+          disabled={isCurrent}
           className={`flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100 ${
-            isCurrentMonth ? "opacity-0 pointer-events-none" : ""
+            isCurrent ? "opacity-0 pointer-events-none" : ""
           }`}
         >
           <ChevronRight className="h-5 w-5" />
         </button>
         </div>
       </div>
+
+      {/* Period ending soon alert */}
+      {isCurrent && (cycle.cycleDay !== 1 || cycle.cycleHour !== 0) && (() => {
+        const totalDays = cycle.daysInPeriod(selectedDate);
+        const elapsed = cycle.daysElapsed(selectedDate);
+        const left = Math.max(totalDays - elapsed, 0);
+        if (left > 3 || left === 0) return null;
+        const balance = totals.income - totals.expenses;
+        return (
+          <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 px-4 py-3">
+            <CalendarClock className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Tu periodo cierra en {left} {left === 1 ? "dia" : "dias"}
+              </p>
+              <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                Balance actual: <span className={`font-semibold ${balance >= 0 ? "text-emerald-600" : "text-rose-500"}`}>
+                  {new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(balance)}
+                </span>
+              </p>
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="space-y-5 mt-4">
       {loading ? (
@@ -296,6 +296,9 @@ export function DashboardPage() {
               lastMonthExpensesSameDay={lastMonthSameDay}
               selectedDate={selectedDate}
               savingsGoal={savingsGoal}
+              periodDays={cycle.daysInPeriod(selectedDate)}
+              periodElapsed={cycle.daysElapsed(selectedDate)}
+              isCurrentPeriod={isCurrent}
             />
           </div>
 
@@ -306,9 +309,13 @@ export function DashboardPage() {
             savingsGoal={savingsGoal}
             selectedDate={selectedDate}
             onGoalUpdated={setSavingsGoal}
+            periodKey={cycle.periodKey(selectedDate)}
+            periodDays={cycle.daysInPeriod(selectedDate)}
+            periodElapsed={cycle.daysElapsed(selectedDate)}
+            isCurrentPeriod={isCurrent}
           />
 
-          {isCurrentMonth && (
+          {isCurrent && (
             <CategoryAlerts alerts={alerts} hasHistory={hasHistory} />
           )}
         </div>

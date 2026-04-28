@@ -9,6 +9,9 @@ interface MonthPulseProps {
   lastMonthExpensesSameDay: number;
   selectedDate: Date;
   savingsGoal?: number | null;
+  periodDays?: number;
+  periodElapsed?: number;
+  isCurrentPeriod?: boolean;
 }
 
 export function MonthPulse({
@@ -17,14 +20,17 @@ export function MonthPulse({
   lastMonthExpensesSameDay,
   selectedDate,
   savingsGoal,
+  periodDays,
+  periodElapsed,
+  isCurrentPeriod: isCurrentPeriodProp,
 }: MonthPulseProps) {
   const now = new Date();
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const isCurrentMonth =
-    now.getMonth() === month && now.getFullYear() === year;
-  const dayElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+  const daysInMonth = periodDays ?? new Date(year, month + 1, 0).getDate();
+  const isCurrentMonth = isCurrentPeriodProp ??
+    (now.getMonth() === month && now.getFullYear() === year);
+  const dayElapsed = periodElapsed ?? (isCurrentMonth ? now.getDate() : daysInMonth);
   const daysLeft = Math.max(daysInMonth - dayElapsed, 0);
 
   const avgDaily = dayElapsed > 0 ? totalExpenses / dayElapsed : 0;

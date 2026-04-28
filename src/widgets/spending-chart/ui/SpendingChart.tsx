@@ -6,12 +6,18 @@ interface SpendingChartProps {
   totalExpenses: number;
   totalIncome: number;
   selectedDate?: Date;
+  periodDays?: number;
+  periodElapsed?: number;
+  isCurrentPeriod?: boolean;
 }
 
 export function SpendingChart({
   totalExpenses,
   totalIncome,
   selectedDate,
+  periodDays,
+  periodElapsed,
+  isCurrentPeriod: isCurrentPeriodProp,
 }: SpendingChartProps) {
   const balance = totalIncome - totalExpenses;
   const isPositive = balance >= 0;
@@ -20,10 +26,10 @@ export function SpendingChart({
   const date = selectedDate ?? now;
   const year = date.getFullYear();
   const month = date.getMonth();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const isCurrentMonth =
-    now.getMonth() === month && now.getFullYear() === year;
-  const dayElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+  const daysInMonth = periodDays ?? new Date(year, month + 1, 0).getDate();
+  const isCurrentMonth = isCurrentPeriodProp ??
+    (now.getMonth() === month && now.getFullYear() === year);
+  const dayElapsed = periodElapsed ?? (isCurrentMonth ? now.getDate() : daysInMonth);
   const daysLeft = isCurrentMonth ? daysInMonth - dayElapsed : 0;
   const dailyBudget = daysLeft > 0 ? balance / daysLeft : 0;
   const spendingProgress = totalIncome > 0 ? totalExpenses / totalIncome : 0;

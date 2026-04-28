@@ -27,11 +27,13 @@ import {
   CreditCard,
   Landmark,
   ChevronRight,
+  CalendarClock,
 } from "lucide-react";
 import { CreditCardSetupModal } from "@/src/features/credit-card-setup";
 import { getBankBrand } from "@/src/shared/config/bank-brands";
 import { Select } from "@/src/shared/ui/select";
 import { Input } from "@/src/shared/ui/input";
+import { useCycleConfig } from "@/src/shared/context/cycle-config";
 
 function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
@@ -48,6 +50,94 @@ function ThemeToggle() {
         onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
       />
     </div>
+  );
+}
+
+function CycleConfigCard() {
+  const { cycleDay, cycleHour } = useCycleConfig();
+  const [day, setDay] = useState(cycleDay);
+  const [hour, setHour] = useState(cycleHour);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setDay(cycleDay);
+    setHour(cycleHour);
+  }, [cycleDay, cycleHour]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase
+        .from("profiles")
+        .update({ cycle_start_day: day, cycle_start_hour: hour })
+        .eq("id", user.id);
+      window.dispatchEvent(new CustomEvent("cycle-config-updated"));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+    setSaving(false);
+  };
+
+  const hasChanges = day !== cycleDay || hour !== cycleHour;
+  const isDefault = day === 1 && hour === 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CalendarClock className="h-5 w-5" />
+          Ciclo de pago
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-gray-500">
+          Configura cuando empieza tu mes financiero, basado en tu dia de pago.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-[11px] text-gray-500">Dia de pago</label>
+            <Select
+              value={String(day)}
+              onChange={(e) => setDay(Number(e.target.value))}
+              className="text-sm h-8"
+            >
+              {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <label className="text-[11px] text-gray-500">Hora de pago</label>
+            <Select
+              value={String(hour)}
+              onChange={(e) => setHour(Number(e.target.value))}
+              className="text-sm h-8"
+            >
+              {Array.from({ length: 24 }, (_, i) => i).map((h) => (
+                <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <p className="text-[11px] text-gray-400">
+          {isDefault && !hasChanges
+            ? "Mes calendario estandar (dia 1 a fin de mes)"
+            : `Tu periodo va del ${day} de cada mes a las ${String(hour).padStart(2, "0")}:00 al ${day} del siguiente mes`}
+        </p>
+        {(hasChanges || saved) && (
+          <Button
+            onClick={handleSave}
+            disabled={saving || saved}
+            className="w-full"
+          >
+            {saved ? "Guardado" : saving ? "Guardando..." : "Guardar"}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -441,6 +531,9 @@ export function SettingsPage() {
           )}
         </Card>
       )}
+
+      {/* Cycle config */}
+      <CycleConfigCard />
 
       {/* Manual sync */}
       {emailAccounts.length > 0 && (

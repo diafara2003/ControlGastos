@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/shared/u
 import { Button } from "@/src/shared/ui/button";
 
 import { formatCOP } from "@/src/shared/lib/currency";
+import { useCycleConfig } from "@/src/shared/context/cycle-config";
 
 /** Get YYYY-MM-DD in Colombia timezone */
 function toColombiaDate(isoString: string): string {
@@ -62,14 +63,23 @@ function getWeekendSummary(
   return { expenses, income };
 }
 
-/** Get "YYYY-MM" key from a date string */
-function toMonthKey(dateStr: string): string {
-  return dateStr.slice(0, 7); // "YYYY-MM"
+/** Get period key for a date string, using cycle config */
+function toMonthKeyWithCycle(
+  dateStr: string,
+  periodKeyFn: (d: Date) => string
+): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return periodKeyFn(d);
 }
 
-function getMonthLabel(dateStr: string): string {
+function getMonthLabelWithCycle(
+  dateStr: string,
+  periodMonthNameFn: (d: Date) => string
+): string {
   const d = new Date(dateStr + "T12:00:00");
-  const label = d.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  const name = periodMonthNameFn(d);
+  const year = d.getFullYear();
+  const label = `${name} ${year}`;
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
@@ -79,6 +89,7 @@ export function TransactionList({
   onTransactionClick,
   onDeleteMonth,
 }: TransactionListProps) {
+  const cycle = useCycleConfig();
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [deleteMonth, setDeleteMonth] = useState<{ year: number; month: number; label: string } | null>(null);
 
@@ -148,8 +159,8 @@ export function TransactionList({
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const weekendSummary = getWeekendSummary(grouped, date);
 
-        const currentMonth = toMonthKey(date);
-        const prevMonth = index > 0 ? toMonthKey(entries[index - 1][0]) : null;
+        const currentMonth = toMonthKeyWithCycle(date, cycle.periodKey);
+        const prevMonth = index > 0 ? toMonthKeyWithCycle(entries[index - 1][0], cycle.periodKey) : null;
         const showMonthHeader = currentMonth !== prevMonth;
 
         return (
@@ -157,13 +168,13 @@ export function TransactionList({
             {showMonthHeader && (
               <div className="flex items-center justify-between bg-gray-100 dark:bg-slate-800 rounded-lg px-4 py-2 mb-2">
                 <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                  {getMonthLabel(date)}
+                  {getMonthLabelWithCycle(date, cycle.periodMonthName)}
                 </span>
                 {onDeleteMonth && (
                   <button
                     type="button"
-                    aria-label={`Eliminar transacciones de ${getMonthLabel(date)}`}
-                    onClick={() => setDeleteMonth({ year: d.getFullYear(), month: d.getMonth() + 1, label: getMonthLabel(date) })}
+                    aria-label={`Eliminar transacciones de ${getMonthLabelWithCycle(date, cycle.periodMonthName)}`}
+                    onClick={() => setDeleteMonth({ year: d.getFullYear(), month: d.getMonth() + 1, label: getMonthLabelWithCycle(date, cycle.periodMonthName) })}
                     className="text-gray-400 hover:text-red-500 transition-colors p-1"
                   >
                     <Trash2 className="h-4 w-4" />

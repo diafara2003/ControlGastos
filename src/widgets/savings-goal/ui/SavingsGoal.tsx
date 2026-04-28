@@ -19,6 +19,10 @@ interface SavingsGoalProps {
   savingsGoal: number | null;
   selectedDate: Date;
   onGoalUpdated: (goal: number | null) => void;
+  periodKey?: string;
+  periodDays?: number;
+  periodElapsed?: number;
+  isCurrentPeriod?: boolean;
 }
 
 export function SavingsGoal({
@@ -28,6 +32,10 @@ export function SavingsGoal({
   savingsGoal,
   selectedDate,
   onGoalUpdated,
+  periodKey: periodKeyProp,
+  periodDays,
+  periodElapsed,
+  isCurrentPeriod: isCurrentPeriodProp,
 }: SavingsGoalProps) {
   const [editing, setEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -38,11 +46,11 @@ export function SavingsGoal({
   const now = new Date();
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth();
-  const monthKey = `${year}-${String(month + 1).padStart(2, "0")}`;
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const isCurrentMonth =
-    now.getMonth() === month && now.getFullYear() === year;
-  const dayElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+  const monthKey = periodKeyProp ?? `${year}-${String(month + 1).padStart(2, "0")}`;
+  const daysInMonth = periodDays ?? new Date(year, month + 1, 0).getDate();
+  const isCurrentMonth = isCurrentPeriodProp ??
+    (now.getMonth() === month && now.getFullYear() === year);
+  const dayElapsed = periodElapsed ?? (isCurrentMonth ? now.getDate() : daysInMonth);
   const daysLeft = Math.max(daysInMonth - dayElapsed, 0);
 
   const budget = savingsGoal != null ? totalIncome - savingsGoal : null;
