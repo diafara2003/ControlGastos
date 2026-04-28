@@ -229,11 +229,13 @@ export async function parseWithAI(
   userId?: string
 ): Promise<AIParseResult | null> {
   try {
+    const body = email.bodyText.trim();
+    const content = body.length > 50 ? body.slice(0, 2000) : (email.snippet ?? body);
     const userMessage = `Asunto: ${email.subject}
 De: ${email.from}
 Fecha del correo: ${email.date}
 Cuerpo:
-${email.bodyText.slice(0, 2000)}`;
+${content}`;
 
     const response = await chatCompletion([
       { role: "system", content: SYSTEM_PROMPT },
