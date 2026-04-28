@@ -13,17 +13,19 @@ import type { Category } from "@/src/entities/category";
 import { EditTransactionForm } from "@/src/features/edit-transaction";
 import { WithdrawalDetailsModal } from "@/src/features/withdrawal-details";
 import { AddTransactionForm } from "@/src/features/add-transaction";
-import { ExportButton } from "@/src/features/export-csv";
 import { Input } from "@/src/shared/ui/input";
 import { Button } from "@/src/shared/ui/button";
 import { createClient } from "@/src/shared/api/supabase/client";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
+import { useCycleConfig } from "@/src/shared/context/cycle-config";
 import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
-import { Search, Plus, Banknote } from "lucide-react";
+import { Search, Plus, Banknote, ChevronLeft, ChevronRight } from "lucide-react";
 
 export function TransactionsPage() {
   const searchParams = useSearchParams();
   const withdrawalFilter = searchParams.get("filter") === "withdrawals";
+  const cycle = useCycleConfig();
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cards, setCards] = useState<string[]>([]);
@@ -39,6 +41,20 @@ export function TransactionsPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const { selectedAccount, accounts: bankAccounts } = useAccountFilter();
 
+  const isCurrent = cycle.isCurrentPeriod(selectedDate);
+  const monthName = cycle.periodMonthName(selectedDate);
+  const pEnd = cycle.periodEnd(selectedDate);
+  const year = pEnd.getFullYear();
+  const showYear = year !== new Date().getFullYear();
+
+  const goToPreviousMonth = () => {
+    setSelectedDate((prev) => cycle.previousPeriod(prev));
+  };
+  const goToNextMonth = () => {
+    if (isCurrent) return;
+    setSelectedDate((prev) => cycle.nextPeriod(prev));
+  };
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -49,7 +65,11 @@ export function TransactionsPage() {
         });
         setTransactions((data as Transaction[]) ?? []);
       } else {
+        const start = cycle.periodStart(selectedDate).toISOString();
+        const end = cycle.periodEnd(selectedDate).toISOString();
         const txns = await getTransactions({
+          startDate: start,
+          endDate: end,
           categoryId: selectedCategory ?? undefined,
           type: selectedType ?? undefined,
           cardLastFour: selectedCard ?? undefined,
@@ -68,7 +88,7 @@ export function TransactionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedType, selectedCard, searchQuery]);
+  }, [selectedCategory, selectedType, selectedCard, searchQuery, selectedDate, cycle]);
 
   useEffect(() => {
     const timer = setTimeout(loadData, searchQuery ? 300 : 0);
@@ -82,10 +102,11 @@ export function TransactionsPage() {
     return () => window.removeEventListener("transactions-updated", handler);
   }, [loadData]);
 
-  const handleDeleteMonth = useCallback(async (year: number, month: number) => {
-    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
-    const lastDay = new Date(year, month, 0).getDate();
-    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  const handleDeleteMonth = useCallback(async (_year: number, _month: number) => {
+    // Use period boundaries from cycle config for the given month
+    const refDate = new Date(_year, _month - 1, 15);
+    const startDate = cycle.periodStart(refDate).toISOString();
+    const endDate = cycle.periodEnd(refDate).toISOString();
 
     const supabase = createClient();
     const { error } = await supabase
@@ -99,7 +120,7 @@ export function TransactionsPage() {
       return;
     }
     loadData();
-  }, [loadData]);
+  }, [loadData, cycle]);
 
   const filteredTransactions = useMemo(() => {
     let filtered = filterByAccount(transactions, selectedAccount, bankAccounts);
@@ -133,14 +154,35 @@ export function TransactionsPage() {
       <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 pb-3 space-y-3 md:top-0 -mx-4 px-4 md:-mx-8 md:px-8 pt-1 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Movimientos</h1>
-          <div className="flex items-center gap-2">
-            <ExportButton />
-            <Button size="sm" onClick={() => setShowAddForm(true)}>
-              <Plus className="h-3.5 w-3.5" />
-              Agregar
-            </Button>
-          </div>
+          <Button size="sm" onClick={() => setShowAddForm(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Agregar
+          </Button>
         </div>
+
+        {/* Period navigation */}
+        {!searchQuery && (
+          <div className="flex items-center justify-center gap-4">
+            <button
+              onClick={goToPreviousMonth}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-sm font-semibold text-gray-700 capitalize min-w-[120px] text-center">
+              {monthName}{showYear ? ` ${year}` : ""}
+            </span>
+            <button
+              onClick={goToNextMonth}
+              disabled={isCurrent}
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-gray-400 transition-colors active:bg-gray-100 ${
+                isCurrent ? "opacity-0 pointer-events-none" : ""
+              }`}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />

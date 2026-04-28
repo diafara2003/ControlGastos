@@ -13,7 +13,7 @@ import { Spinner } from "@/src/shared/ui/spinner";
 import { formatDate } from "@/src/shared/lib/date";
 import { useTheme } from "@/src/app/providers/ThemeProvider";
 import { Switch } from "@/src/shared/ui/switch";
-import { ExportButton } from "@/src/features/export-csv";
+
 import { PushNotificationToggle } from "@/src/features/push-notifications";
 import {
   LogOut,
@@ -23,7 +23,6 @@ import {
   CheckCircle,
   AlertCircle,
   Moon,
-  Download,
   CreditCard,
   Landmark,
   ChevronRight,
@@ -68,7 +67,9 @@ function CycleConfigCard() {
   const handleSave = async () => {
     setSaving(true);
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (user) {
       await supabase
         .from("profiles")
@@ -100,12 +101,15 @@ function CycleConfigCard() {
           <div>
             <label className="text-[11px] text-gray-500">Dia de pago</label>
             <Select
+              style={{ height: 35 }}
               value={String(day)}
               onChange={(e) => setDay(Number(e.target.value))}
               className="text-sm h-8"
             >
               {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                <option key={d} value={d}>{d}</option>
+                <option key={d} value={d}>
+                  {d}
+                </option>
               ))}
             </Select>
           </div>
@@ -113,11 +117,14 @@ function CycleConfigCard() {
             <label className="text-[11px] text-gray-500">Hora de pago</label>
             <Select
               value={String(hour)}
+              style={{ height: 35 }}
               onChange={(e) => setHour(Number(e.target.value))}
               className="text-sm h-8"
             >
               {Array.from({ length: 24 }, (_, i) => i).map((h) => (
-                <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                <option key={h} value={h}>
+                  {String(h).padStart(2, "0")}:00
+                </option>
               ))}
             </Select>
           </div>
@@ -159,26 +166,43 @@ export function SettingsPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [userCards, setUserCards] = useState<{ bank_name: string; product_type: string }[]>([]);
+  const [userCards, setUserCards] = useState<
+    { bank_name: string; product_type: string }[]
+  >([]);
   const [showCardModal, setShowCardModal] = useState(false);
   const [bankAccountsOpen, setBankAccountsOpen] = useState(false);
-  const [bankAccounts, setBankAccounts] = useState<{
-    id: string; identifier: string; bank_name: string;
-    account_type: string; is_tracked: boolean;
-    track_expenses: boolean; track_income: boolean; label: string | null;
-  }[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<
+    {
+      id: string;
+      identifier: string;
+      bank_name: string;
+      account_type: string;
+      is_tracked: boolean;
+      track_expenses: boolean;
+      track_income: boolean;
+      label: string | null;
+    }[]
+  >([]);
   const [savingBanks, setSavingBanks] = useState(false);
 
   const loadAccounts = useCallback(async () => {
     const supabase = createClient();
 
     // Load user info
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
     if (authUser) {
       setUser({
         email: authUser.email ?? "",
-        name: authUser.user_metadata?.full_name ?? authUser.user_metadata?.name ?? null,
-        avatarUrl: authUser.user_metadata?.avatar_url ?? authUser.user_metadata?.picture ?? null,
+        name:
+          authUser.user_metadata?.full_name ??
+          authUser.user_metadata?.name ??
+          null,
+        avatarUrl:
+          authUser.user_metadata?.avatar_url ??
+          authUser.user_metadata?.picture ??
+          null,
       });
     }
 
@@ -191,10 +215,7 @@ export function SettingsPage() {
         .from("user_credit_cards")
         .select("bank_name, product_type")
         .order("bank_name"),
-      supabase
-        .from("bank_accounts")
-        .select("*")
-        .order("created_at"),
+      supabase.from("bank_accounts").select("*").order("created_at"),
     ]);
     if (data) setEmailAccounts(data as EmailAccount[]);
     if (cards) setUserCards(cards);
@@ -267,7 +288,9 @@ export function SettingsPage() {
             )}
             <div className="min-w-0">
               {user.name && (
-                <p className="font-semibold text-gray-900 truncate">{user.name}</p>
+                <p className="font-semibold text-gray-900 truncate">
+                  {user.name}
+                </p>
               )}
               <p className="text-sm text-gray-500 truncate">{user.email}</p>
             </div>
@@ -363,7 +386,10 @@ export function SettingsPage() {
               )}
 
               <div className="pt-2">
-                <Button onClick={() => setShowConnectForm(true)} className="w-full">
+                <Button
+                  onClick={() => setShowConnectForm(true)}
+                  className="w-full"
+                >
                   <Mail className="h-4 w-4" />
                   Conectar correo
                 </Button>
@@ -378,18 +404,23 @@ export function SettingsPage() {
         onOpenChange={setShowConnectForm}
         onConnected={() => {
           loadAccounts();
-          setToast({ type: "success", message: "Correo conectado correctamente" });
+          setToast({
+            type: "success",
+            message: "Correo conectado correctamente",
+          });
         }}
       />
 
       {/* Credit cards section removed - replaced by bank_accounts */}
-      {false && <CreditCardSetupModal
-        open={showCardModal}
-        onComplete={() => {
-          setShowCardModal(false);
-          loadAccounts();
-        }}
-      />}
+      {false && (
+        <CreditCardSetupModal
+          open={showCardModal}
+          onComplete={() => {
+            setShowCardModal(false);
+            loadAccounts();
+          }}
+        />
+      )}
 
       {/* Bank accounts - accordion */}
       {bankAccounts.length > 0 && (
@@ -400,134 +431,184 @@ export function SettingsPage() {
           >
             <div className="flex items-center gap-2">
               <Landmark className="h-5 w-5 text-gray-700" />
-              <span className="text-sm font-semibold text-gray-900">Cuentas bancarias</span>
-              <span className="text-[10px] text-gray-400">({bankAccounts.length})</span>
+              <span className="text-sm font-semibold text-gray-900">
+                Cuentas bancarias
+              </span>
+              <span className="text-[10px] text-gray-400">
+                ({bankAccounts.length})
+              </span>
             </div>
-            <ChevronRight className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${bankAccountsOpen ? "rotate-90" : ""}`} />
+            <ChevronRight
+              className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${bankAccountsOpen ? "rotate-90" : ""}`}
+            />
           </button>
           {bankAccountsOpen && (
-          <CardContent className="space-y-3 pt-0">
-            {bankAccounts.map((acc) => {
-              const brand = getBankBrand(acc.bank_name);
-              return (
-                <div key={acc.id} className="rounded-lg border border-gray-200 p-3 space-y-2.5">
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
-                      style={{ backgroundColor: brand.bgColor, color: brand.textColor }}
-                    >
-                      {brand.initials}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900">
-                        *{acc.identifier}
-                        <span className="text-xs text-gray-400 font-normal ml-1.5">
-                          {brand.name}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-[11px] text-gray-500">Nombre</label>
-                      <Input
-                        value={acc.label ?? ""}
-                        onChange={(e) =>
-                          setBankAccounts((prev) =>
-                            prev.map((a) => a.id === acc.id ? { ...a, label: e.target.value } : a)
-                          )
-                        }
-                        placeholder="Ej: Cuenta principal"
-                        className="text-sm h-8"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] text-gray-500">Tipo</label>
-                      <Select
-                        value={acc.account_type}
-                        onChange={(e) =>
-                          setBankAccounts((prev) =>
-                            prev.map((a) => a.id === acc.id ? { ...a, account_type: e.target.value } : a)
-                          )
-                        }
-                        className="text-sm h-8"
+            <CardContent className="space-y-3 pt-0">
+              {bankAccounts.map((acc) => {
+                const brand = getBankBrand(acc.bank_name);
+                return (
+                  <div
+                    key={acc.id}
+                    className="rounded-lg border border-gray-200 p-3 space-y-2.5"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
+                        style={{
+                          backgroundColor: brand.bgColor,
+                          color: brand.textColor,
+                        }}
                       >
-                        <option value="savings">Ahorros</option>
-                        <option value="credit">Crédito</option>
-                        <option value="other">Otra</option>
-                      </Select>
+                        {brand.initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900">
+                          *{acc.identifier}
+                          <span className="text-xs text-gray-400 font-normal ml-1.5">
+                            {brand.name}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[11px] text-gray-500">
+                          Nombre
+                        </label>
+                        <Input
+                          value={acc.label ?? ""}
+                          onChange={(e) =>
+                            setBankAccounts((prev) =>
+                              prev.map((a) =>
+                                a.id === acc.id
+                                  ? { ...a, label: e.target.value }
+                                  : a,
+                              ),
+                            )
+                          }
+                          placeholder="Ej: Cuenta principal"
+                          className="text-sm h-8"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] text-gray-500">
+                          Tipo
+                        </label>
+                        <Select
+                          value={acc.account_type}
+                          onChange={(e) =>
+                            setBankAccounts((prev) =>
+                              prev.map((a) =>
+                                a.id === acc.id
+                                  ? { ...a, account_type: e.target.value }
+                                  : a,
+                              ),
+                            )
+                          }
+                          className="text-sm h-8"
+                        >
+                          <option value="savings">Ahorros</option>
+                          <option value="credit">Crédito</option>
+                          <option value="other">Otra</option>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={acc.is_tracked}
+                          onChange={(e) =>
+                            setBankAccounts((prev) =>
+                              prev.map((a) =>
+                                a.id === acc.id
+                                  ? { ...a, is_tracked: e.target.checked }
+                                  : a,
+                              ),
+                            )
+                          }
+                          className="h-3.5 w-3.5 rounded border-gray-300 text-violet-600"
+                        />
+                        <span className="text-xs text-gray-700">
+                          Incluir en indicadores
+                        </span>
+                      </label>
+                      {acc.is_tracked && (
+                        <div className="ml-5 flex gap-4">
+                          <label className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={acc.track_expenses}
+                              onChange={(e) =>
+                                setBankAccounts((prev) =>
+                                  prev.map((a) =>
+                                    a.id === acc.id
+                                      ? {
+                                          ...a,
+                                          track_expenses: e.target.checked,
+                                        }
+                                      : a,
+                                  ),
+                                )
+                              }
+                              className="h-3 w-3 rounded border-gray-300 text-rose-500"
+                            />
+                            <span className="text-[11px] text-gray-600">
+                              Gastos
+                            </span>
+                          </label>
+                          <label className="flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={acc.track_income}
+                              onChange={(e) =>
+                                setBankAccounts((prev) =>
+                                  prev.map((a) =>
+                                    a.id === acc.id
+                                      ? { ...a, track_income: e.target.checked }
+                                      : a,
+                                  ),
+                                )
+                              }
+                              className="h-3 w-3 rounded border-gray-300 text-emerald-500"
+                            />
+                            <span className="text-[11px] text-gray-600">
+                              Ingresos
+                            </span>
+                          </label>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={acc.is_tracked}
-                        onChange={(e) =>
-                          setBankAccounts((prev) =>
-                            prev.map((a) => a.id === acc.id ? { ...a, is_tracked: e.target.checked } : a)
-                          )
-                        }
-                        className="h-3.5 w-3.5 rounded border-gray-300 text-violet-600"
-                      />
-                      <span className="text-xs text-gray-700">Incluir en indicadores</span>
-                    </label>
-                    {acc.is_tracked && (
-                      <div className="ml-5 flex gap-4">
-                        <label className="flex items-center gap-1.5">
-                          <input
-                            type="checkbox"
-                            checked={acc.track_expenses}
-                            onChange={(e) =>
-                              setBankAccounts((prev) =>
-                                prev.map((a) => a.id === acc.id ? { ...a, track_expenses: e.target.checked } : a)
-                              )
-                            }
-                            className="h-3 w-3 rounded border-gray-300 text-rose-500"
-                          />
-                          <span className="text-[11px] text-gray-600">Gastos</span>
-                        </label>
-                        <label className="flex items-center gap-1.5">
-                          <input
-                            type="checkbox"
-                            checked={acc.track_income}
-                            onChange={(e) =>
-                              setBankAccounts((prev) =>
-                                prev.map((a) => a.id === acc.id ? { ...a, track_income: e.target.checked } : a)
-                              )
-                            }
-                            className="h-3 w-3 rounded border-gray-300 text-emerald-500"
-                          />
-                          <span className="text-[11px] text-gray-600">Ingresos</span>
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            <Button
-              onClick={async () => {
-                setSavingBanks(true);
-                const supabase = createClient();
-                for (const acc of bankAccounts) {
-                  await supabase.from("bank_accounts").update({
-                    label: acc.label || `Cuenta *${acc.identifier}`,
-                    account_type: acc.account_type,
-                    is_tracked: acc.is_tracked,
-                    track_expenses: acc.track_expenses,
-                    track_income: acc.track_income,
-                  }).eq("id", acc.id);
-                }
-                setSavingBanks(false);
-                window.dispatchEvent(new CustomEvent("bank-accounts-updated"));
-              }}
-              disabled={savingBanks}
-              className="w-full"
-            >
-              {savingBanks ? "Guardando..." : "Guardar cambios"}
-            </Button>
-          </CardContent>
+                );
+              })}
+              <Button
+                onClick={async () => {
+                  setSavingBanks(true);
+                  const supabase = createClient();
+                  for (const acc of bankAccounts) {
+                    await supabase
+                      .from("bank_accounts")
+                      .update({
+                        label: acc.label || `Cuenta *${acc.identifier}`,
+                        account_type: acc.account_type,
+                        is_tracked: acc.is_tracked,
+                        track_expenses: acc.track_expenses,
+                        track_income: acc.track_income,
+                      })
+                      .eq("id", acc.id);
+                  }
+                  setSavingBanks(false);
+                  window.dispatchEvent(
+                    new CustomEvent("bank-accounts-updated"),
+                  );
+                }}
+                disabled={savingBanks}
+                className="w-full"
+              >
+                {savingBanks ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </CardContent>
           )}
         </Card>
       )}
@@ -546,14 +627,10 @@ export function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-gray-500">
-              Los correos se sincronizan al abrir la app y cuando vuelves a ella.
-              También puedes forzar una sincronización manual.
+              Los correos se sincronizan al abrir la app y cuando vuelves a
+              ella. También puedes forzar una sincronización manual.
             </p>
-            <Button
-              onClick={handleSync}
-              disabled={syncing}
-              className="w-full"
-            >
+            <Button onClick={handleSync} disabled={syncing} className="w-full">
               {syncing ? (
                 <>
                   <Spinner className="h-4 w-4" />
@@ -581,13 +658,6 @@ export function SettingsPage() {
         <CardContent className="space-y-4">
           <ThemeToggle />
           <PushNotificationToggle />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Download className="h-4 w-4 text-gray-500" />
-              <span className="text-sm text-gray-700">Exportar datos</span>
-            </div>
-            <ExportButton />
-          </div>
         </CardContent>
       </Card>
 
