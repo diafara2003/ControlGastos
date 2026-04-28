@@ -58,7 +58,7 @@ export const bancolombiaPattern: BankPattern = {
 
     // "Compraste $36.084,00 en KS*PAGSEGURO CO con tu T.Deb *1036"
     const comprasteMatch = bodyText.match(
-      /[Cc]ompraste\s+\$([\d.,]+)\s+en\s+([^,]+?)(?:\s+con\s+tu|,|\.|$)/i
+      /[Cc]ompraste\s+\$([\d.,]+)\s+en\s+([^,]+?)(?:\s+con\s+tu|\s+el\s+\d|,|$)/i
     );
     if (comprasteMatch) {
       const amount = parseAmount(`$${comprasteMatch[1]}`);
@@ -76,7 +76,7 @@ export const bancolombiaPattern: BankPattern = {
 
     // "Pagaste $X en COMERCIO" / "Pagaste $X a NOMBRE"
     const pagasteMatch = bodyText.match(
-      /[Pp]agaste\s+\$([\d.,]+)\s+(?:en|a)\s+([^,]+?)(?:\s+con\s+tu|,|\.|$)/i
+      /[Pp]agaste\s+\$([\d.,]+)\s+(?:en|a)\s+(.+?)(?:\s+desde\s+tu|\s+con\s+tu|\s+el\s+\d|,|$)/i
     );
     if (pagasteMatch) {
       const amount = parseAmount(`$${pagasteMatch[1]}`);
@@ -182,9 +182,46 @@ export const bancolombiaPattern: BankPattern = {
       }
     }
 
-    // "transferiste $75,000.00 a la llave ... a NOMBRE el DD/MM/YY"
+    // "transferiste $800,000 a la llave XXXX desde tu cuenta *3181 a NOMBRE el DD/MM"
+    // "transferiste $800,000 a la llave XXXX desde tu cuenta *3181 a NOMBRE el DD/MM"
+    const transferisteLlaveMatch = bodyText.match(
+      /transferiste\s+\$([\d.,]+)\s+a\s+la\s+llave\s+\S+\s+desde\s+tu\s+cuenta\s+\S+\s+a\s+(.+?)\s+el\s+/i
+    );
+    if (transferisteLlaveMatch) {
+      const amount = parseAmount(`$${transferisteLlaveMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: transferisteLlaveMatch[2].trim(),
+          description: "Transferencia enviada",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "Transferiste $65,000 desde tu cuenta 3181 a la cuenta *3204758089 el DD/MM"
+    const transferisteCuentaMatch = bodyText.match(
+      /[Tt]ransferiste\s+\$([\d.,]+)\s+desde\s+tu\s+cuenta\s+\S+\s+a\s+la\s+cuenta\s+\S+/i
+    );
+    if (transferisteCuentaMatch) {
+      const amount = parseAmount(`$${transferisteCuentaMatch[1]}`);
+      if (amount) {
+        return {
+          type: "expense",
+          amount,
+          merchant: "Transferencia entre cuentas",
+          description: "Transferencia entre cuentas propias",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "transferiste $75,000.00 a la llave ... a NOMBRE el DD/MM/YY" (fallback)
     const transferisteMatch = bodyText.match(
-      /transferiste\s+\$([\d.,]+)\s+.*?a\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s]+?)\s+el\s+/i
+      /transferiste\s+\$([\d.,]+)\s+.*?a\s+([A-Za-záéíóúÁÉÍÓÚñÑ][^\n,*]+?)\s+el\s+\d/i
     );
     if (transferisteMatch) {
       const amount = parseAmount(`$${transferisteMatch[1]}`);
@@ -238,7 +275,25 @@ export const bancolombiaPattern: BankPattern = {
 
     // --- INCOME ---
 
-    // Transferencia recibida: "recibiste una transferencia por $X de NOMBRE en tu cuenta"
+    // "recibiste una transferencia de NOMBRE por $X en tu cuenta"
+    const transRecibidaDeMatch = bodyText.match(
+      /recibiste\s+una\s+transferencia\s+de\s+(.+?)\s+por\s+\$([\d.,]+)/i
+    );
+    if (transRecibidaDeMatch) {
+      const amount = parseAmount(`$${transRecibidaDeMatch[2]}`);
+      if (amount) {
+        return {
+          type: "income",
+          amount,
+          merchant: transRecibidaDeMatch[1].trim(),
+          description: "Transferencia recibida",
+          transactionDate: parseDateFromBody(bodyText, date),
+          cardLastFour,
+        };
+      }
+    }
+
+    // "recibiste una transferencia por $X de NOMBRE" (formato alternativo)
     const transRecibidaMatch = bodyText.match(
       /(?:recibi(?:ste|ó)|abono|consignaci[oó]n)\s+(?:de\s+)?(?:una\s+)?(?:transferencia\s+)?por\s+\$([\d.,]+)(?:\s+de\s+([^,.\n]+?))?(?:\s+en\s+tu|\s+a\s+tu|,|\.|$)/i
     );
@@ -257,12 +312,29 @@ export const bancolombiaPattern: BankPattern = {
     }
 
     // Nómina / abono de salario
+    // "Recibiste un pago de Nomina de SINCOSOFT SAS por $13,930,202.00"
     if (
       text.includes("nómina") ||
       text.includes("nomina") ||
       text.includes("salario") ||
       text.includes("abono de sueldo")
     ) {
+      const nominaEmpresaMatch = bodyText.match(
+        /pago\s+de\s+[Nn][oó]mina\s+de\s+(.+?)\s+por\s+\$([\d.,]+)/i
+      );
+      if (nominaEmpresaMatch) {
+        const amount = parseAmount(`$${nominaEmpresaMatch[2]}`);
+        if (amount) {
+          return {
+            type: "income",
+            amount,
+            merchant: nominaEmpresaMatch[1].trim(),
+            description: "Pago de nómina",
+            transactionDate: parseDateFromBody(bodyText, date),
+            cardLastFour,
+          };
+        }
+      }
       const nominaAmount = bodyText.match(/\$([\d.,]+)/);
       if (nominaAmount) {
         const amount = parseAmount(`$${nominaAmount[1]}`);
