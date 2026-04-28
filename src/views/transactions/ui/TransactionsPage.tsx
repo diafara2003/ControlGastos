@@ -181,14 +181,7 @@ export function TransactionsPage() {
         transactions={filteredTransactions}
         loading={loading}
         onTransactionClick={(t) => {
-          const isWithdrawal = t.category?.name === "Retiro cajero" ||
-            t.category?.name === "Efectivo" ||
-            /cajero|retiro|atm|servibanca/i.test(t.merchant);
-          if (isWithdrawal) {
-            setWithdrawalTx(t);
-          } else {
-            setEditingTx(t);
-          }
+          setEditingTx(t);
         }}
       />
 
@@ -201,6 +194,10 @@ export function TransactionsPage() {
             if (!open) setEditingTx(null);
           }}
           onSaved={loadData}
+          onDetailWithdrawal={(t) => {
+            setEditingTx(null);
+            setWithdrawalTx(t);
+          }}
         />
       )}
 

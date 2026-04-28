@@ -17,7 +17,7 @@ import { formatCOPInput, rawDigits } from "@/src/shared/lib/currency";
 import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
-import { BookOpen, ChevronRight, Search, X } from "lucide-react";
+import { BookOpen, ChevronRight, Search, X, Banknote } from "lucide-react";
 
 interface EditTransactionFormProps {
   transaction: Transaction;
@@ -25,6 +25,7 @@ interface EditTransactionFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: () => void;
+  onDetailWithdrawal?: (t: Transaction) => void;
 }
 
 export function EditTransactionForm({
@@ -33,6 +34,7 @@ export function EditTransactionForm({
   open,
   onOpenChange,
   onSaved,
+  onDetailWithdrawal,
 }: EditTransactionFormProps) {
   const [categoryId, setCategoryId] = useState(transaction.category_id ?? "");
   const [merchant, setMerchant] = useState(transaction.merchant);
@@ -374,6 +376,20 @@ export function EditTransactionForm({
               {saving ? <Spinner className="h-4 w-4" /> : "Guardar"}
             </Button>
           </div>
+
+          {onDetailWithdrawal &&
+            (transaction.category?.name === "Retiro cajero" ||
+              transaction.category?.name === "Efectivo" ||
+              /cajero|retiro|atm|servibanca/i.test(transaction.merchant)) && (
+            <Button
+              variant="outline"
+              className="w-full border-amber-300 text-amber-600 hover:bg-amber-50"
+              onClick={() => onDetailWithdrawal(transaction)}
+            >
+              <Banknote className="h-4 w-4 mr-1.5" />
+              Detallar retiro
+            </Button>
+          )}
 
           <Button
             variant="outline"
