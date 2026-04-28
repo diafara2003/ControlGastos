@@ -87,8 +87,8 @@ export function DialogContent({
       <div
         className={cn(
           "relative w-full bg-white shadow-xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0",
-          "h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto",
-          "sm:max-w-lg sm:rounded-2xl p-6",
+          "h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto overflow-x-hidden",
+          "sm:max-w-lg sm:rounded-2xl p-6 pb-24 sm:pb-6",
           className
         )}
       >
