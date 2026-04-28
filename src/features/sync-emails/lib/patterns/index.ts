@@ -1,6 +1,7 @@
 import { bancolombiaPattern } from "./bancolombia";
 import { nequiPattern } from "./nequi";
 import { daviviendaPattern } from "./davivienda";
+import { nuPattern } from "./nu";
 import { genericPattern } from "./generic";
 import type { BankPattern, ParsedTransaction } from "./types";
 
@@ -10,6 +11,7 @@ const ALL_PATTERNS: BankPattern[] = [
   bancolombiaPattern,
   nequiPattern,
   daviviendaPattern,
+  nuPattern,
   genericPattern,
 ];
 
