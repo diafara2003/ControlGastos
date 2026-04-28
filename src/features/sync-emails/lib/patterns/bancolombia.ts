@@ -23,24 +23,23 @@ function parseAmount(text: string): number | null {
 }
 
 function parseDateFromBody(text: string, fallbackDate: string): Date {
-  // Try to extract full datetime: "28/04/2026 13:45:15"
+  // Try to extract full datetime: "28/04/2026 13:45:15" — treat as Colombia time (UTC-5)
   const datetimeMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
   if (datetimeMatch) {
     const [, dd, mm, yyyy, hh, min, ss = "00"] = datetimeMatch;
-    // Use local time string to avoid UTC midnight offset issues
-    return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`);
+    return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}-05:00`);
   }
 
-  // Date only: "28/04/2026" — use noon local time to avoid UTC day-shift
+  // Date only: "28/04/2026" — use noon Colombia time to avoid UTC day-shift
   const dateMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
   if (dateMatch) {
-    return new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T12:00:00`);
+    return new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T12:00:00-05:00`);
   }
 
   // ISO format: "2026-04-28"
   const isoMatch = text.match(/(\d{4})-(\d{2})-(\d{2})/);
   if (isoMatch) {
-    return new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T12:00:00`);
+    return new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T12:00:00-05:00`);
   }
 
   return new Date(fallbackDate);
