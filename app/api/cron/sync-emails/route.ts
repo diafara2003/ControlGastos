@@ -73,6 +73,9 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
     accountId: string;
     email: string;
     processed: number;
+    skippedDupes: number;
+    newEmails: number;
+    aiParsed: number;
     created: number;
     errors: string[];
   }[] = [];
@@ -114,6 +117,9 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       accountId: account.id,
       email: account.email,
       processed: 0,
+      skippedDupes: 0,
+      newEmails: 0,
+      aiParsed: 0,
       created: 0,
       errors: [] as string[],
     };
@@ -183,11 +189,13 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       const deletedMsgIds = new Set(
         deleted?.map((e) => e.email_message_id) ?? []
       );
-      const newEmails = emails.filter(
+      const newEmailsList = emails.filter(
         (e) => !existingIds.has(e.messageId) && !deletedMsgIds.has(e.messageId)
       );
+      logEntry.skippedDupes = emails.length - newEmailsList.length;
+      logEntry.newEmails = newEmailsList.length;
 
-      if (newEmails.length === 0) {
+      if (newEmailsList.length === 0) {
         console.log(`All ${emails.length} emails already processed, skipping`);
         await updateSyncLog(supabase, syncLog?.id, "success", logEntry.processed, 0);
         results.push(logEntry);
@@ -195,8 +203,9 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       }
 
       // 3. Parse + classify emails with AI (single call per email)
-      console.log(`Parsing ${newEmails.length} new emails with AI (${existingIds.size} already processed)...`);
-      const parseResults = await parseEmails(newEmails, account.user_id);
+      console.log(`Parsing ${newEmailsList.length} new emails with AI (${existingIds.size} already processed)...`);
+      const parseResults = await parseEmails(newEmailsList, account.user_id);
+      logEntry.aiParsed = parseResults.filter((r) => r.parsed !== null).length;
 
       for (const r of parseResults) {
         console.log(`AI result: parsed=${!!r.parsed} ${r.parsed ? `type=${r.parsed.type} amount=${r.parsed.amount} merchant=${r.parsed.merchant} category=${r.categoryName}` : 'no_transaction'}`);
