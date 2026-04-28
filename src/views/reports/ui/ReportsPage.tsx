@@ -285,7 +285,7 @@ export function ReportsPage() {
   return (
     <div className="pb-2">
       {/* Month navigation - sticky */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 space-y-2">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 dark:border-slate-700 space-y-2">
         <AccountFilterToggle />
         <div className="flex items-center justify-between">
         <Button
@@ -296,7 +296,7 @@ export function ReportsPage() {
         >
           <ChevronLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-lg font-bold text-gray-900 capitalize tracking-tight">
+        <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 capitalize tracking-tight">
           Reporte de {monthName}
           {showYear ? ` ${year}` : ""}
         </h1>

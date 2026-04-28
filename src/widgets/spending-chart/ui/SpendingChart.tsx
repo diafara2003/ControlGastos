@@ -82,16 +82,16 @@ export function SpendingChart({
 
       {/* Income / Expenses */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-white border border-gray-100 px-4 py-3 shadow-sm">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+        <div className="rounded-xl bg-white border border-gray-100 px-4 py-3 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium">
             Ingresos
           </p>
           <p className="text-lg font-bold text-emerald-600 mt-0.5 tabular-nums">
             {formatCOP(totalIncome)}
           </p>
         </div>
-        <div className="rounded-xl bg-white border border-gray-100 px-4 py-3 shadow-sm">
-          <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+        <div className="rounded-xl bg-white border border-gray-100 px-4 py-3 shadow-sm dark:bg-slate-800 dark:border-slate-700">
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium">
             Gastos
           </p>
           <p className="text-lg font-bold text-rose-400 mt-0.5 tabular-nums">

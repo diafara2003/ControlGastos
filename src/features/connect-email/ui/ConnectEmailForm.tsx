@@ -96,7 +96,7 @@ export function ConnectEmailForm({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Correo electrónico
             </label>
             <Input
@@ -111,7 +111,7 @@ export function ConnectEmailForm({
           {!isMicrosoft && (
             <>
               <div>
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1">
                   Contraseña de aplicación
                   <button
                     type="button"

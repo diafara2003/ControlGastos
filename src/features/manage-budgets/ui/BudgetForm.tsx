@@ -91,7 +91,7 @@ export function BudgetForm({
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Categoría
             </label>
             <Select
@@ -110,7 +110,7 @@ export function BudgetForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Límite mensual (COP)
             </label>
             <Input

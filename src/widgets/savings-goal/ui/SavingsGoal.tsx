@@ -177,7 +177,7 @@ export function SavingsGoal({
     if (!record) return null;
 
     return (
-      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
         <div className="flex items-center gap-2 mb-3">
           <PiggyBank className="h-4 w-4 text-violet-500" />
           <p className="text-xs font-medium text-gray-500 tracking-wide">
@@ -185,7 +185,7 @@ export function SavingsGoal({
           </p>
         </div>
         <div className="flex items-baseline justify-between">
-          <p className="text-[22px] font-bold text-gray-900 tabular-nums tracking-tight">
+          <p className="text-[22px] font-bold text-gray-900 dark:text-gray-100 tabular-nums tracking-tight">
             {formatCOP(record.goal)}
           </p>
           <span
@@ -247,7 +247,7 @@ export function SavingsGoal({
   }
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -317,7 +317,7 @@ export function SavingsGoal({
         <>
           {/* Goal amount and status */}
           <div className="flex items-baseline justify-between">
-            <p className="text-[22px] font-bold text-gray-900 tabular-nums tracking-tight">
+            <p className="text-[22px] font-bold text-gray-900 dark:text-gray-100 tabular-nums tracking-tight">
               {formatCOP(savingsGoal!)}
             </p>
             <span
@@ -341,7 +341,7 @@ export function SavingsGoal({
 
           {/* Progress bar */}
           <div className="mt-3">
-            <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-2 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
                   onTrack ? "bg-violet-500" : "bg-amber-400"

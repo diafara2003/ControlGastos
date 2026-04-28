@@ -21,27 +21,27 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 py-3 px-1 text-left transition-colors active:bg-gray-50"
+      className="flex w-full items-center gap-3 py-3 px-1 text-left transition-colors active:bg-gray-50 dark:active:bg-slate-700"
     >
       <div
         className={`flex h-9 w-9 items-center justify-center rounded-xl flex-shrink-0 ${
-          isIncome ? "bg-emerald-50" : "bg-gray-50"
+          isIncome ? "bg-emerald-50 dark:bg-emerald-900/20" : "bg-gray-50 dark:bg-slate-700"
         }`}
       >
         <LucideIcon
           name={transaction.category?.icon ?? "credit-card"}
           size={18}
-          className={isIncome ? "text-emerald-600" : "text-gray-500"}
+          className={isIncome ? "text-emerald-600" : "text-gray-500 dark:text-gray-400"}
         />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="truncate font-medium text-gray-900 text-sm leading-tight">
+        <p className="truncate font-medium text-gray-900 dark:text-gray-100 text-sm leading-tight">
           {transaction.merchant}
         </p>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
           {formatShortDate(transaction.transaction_date)}
           {transaction.category && (
-            <span className="text-gray-300"> · {transaction.category.name}</span>
+            <span className="text-gray-300 dark:text-gray-600"> · {transaction.category.name}</span>
           )}
           {transaction.classification_method === "pattern" && (
             <span className="ml-1 text-[9px] text-violet-500 font-medium bg-violet-50 px-1 py-0.5 rounded">
@@ -62,7 +62,7 @@ export function TransactionCard({ transaction, onClick }: TransactionCardProps) 
       </div>
       <span
         className={`text-sm font-semibold whitespace-nowrap tabular-nums ${
-          isIncome ? "text-emerald-600" : pendingDetails ? "text-amber-600" : "text-gray-900"
+          isIncome ? "text-emerald-600" : pendingDetails ? "text-amber-600" : "text-gray-900 dark:text-gray-100"
         }`}
       >
         {formatTransactionAmount(transaction.amount, transaction.type)}

@@ -60,22 +60,22 @@ export function MonthPulse({
   const projectionBg = withinBudget ? "bg-emerald-50" : "bg-rose-50";
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="flex items-baseline justify-between">
         <div>
-          <p className="text-xs font-medium text-gray-500 tracking-wide">
+          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 tracking-wide">
             Gastado este mes
           </p>
-          <p className="text-[28px] font-bold text-gray-900 mt-0.5 tabular-nums tracking-tight">
+          <p className="text-[28px] font-bold text-gray-900 dark:text-gray-100 mt-0.5 tabular-nums tracking-tight">
             {formatCOP(totalExpenses)}
           </p>
         </div>
         {isCurrentMonth && (
           <div className="text-right">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-medium">
               Quedan
             </p>
-            <p className="text-sm font-semibold text-gray-700 tabular-nums">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 tabular-nums">
               {daysLeft} {daysLeft === 1 ? "día" : "días"}
             </p>
           </div>
@@ -111,7 +111,7 @@ export function MonthPulse({
 
       {isCurrentMonth && totalExpenses > 0 && (
         <div className={`mt-4 rounded-xl ${projectionBg} px-4 py-3`}>
-          <p className="text-[11px] font-medium text-gray-600">
+          <p className="text-[11px] font-medium text-gray-600 dark:text-gray-400">
             Si sigues a este ritmo, cerrarás el mes en
           </p>
           <p

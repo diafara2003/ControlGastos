@@ -81,14 +81,14 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
 
         <div className="space-y-4">
           {/* Type toggle */}
-          <div className="flex rounded-lg border border-gray-200 overflow-hidden">
+          <div className="flex rounded-lg border border-gray-200 dark:border-slate-700 overflow-hidden">
             <button
               type="button"
               onClick={() => setType("dado")}
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
                 type === "dado"
                   ? "bg-blue-500 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
             >
               Yo presto
@@ -99,7 +99,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
               className={`flex-1 py-2 text-sm font-medium transition-colors ${
                 type === "recibido"
                   ? "bg-violet-500 text-white"
-                  : "bg-white text-gray-600 hover:bg-gray-50"
+                  : "bg-white text-gray-600 hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700"
               }`}
             >
               Me prestan
@@ -107,7 +107,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
           </div>
 
           <div className="relative">
-            <label className="text-sm font-medium text-gray-700">Contacto</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Contacto</label>
             <Input
               placeholder="Nombre de la persona"
               value={contactName}
@@ -119,12 +119,12 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
             />
             {showSuggestions && filteredContacts.length > 0 && (
-              <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg max-h-32 overflow-y-auto">
+              <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg max-h-32 overflow-y-auto">
                 {filteredContacts.map((c) => (
                   <button
                     key={c}
                     type="button"
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                     onMouseDown={() => {
                       setContactName(c);
                       setShowSuggestions(false);
@@ -138,7 +138,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Monto (COP)</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monto (COP)</label>
             <Input
               type="text"
               inputMode="numeric"
@@ -149,7 +149,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Fecha del préstamo</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fecha del préstamo</label>
             <Input
               type="date"
               value={startDate}
@@ -158,7 +158,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Fecha esperada de pago (opcional)
             </label>
             <Input
@@ -169,7 +169,7 @@ export function AddPrestamoForm({ open, onOpenChange, onAdded }: AddPrestamoForm
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Notas (opcional)</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notas (opcional)</label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

@@ -196,7 +196,7 @@ export function DashboardPage() {
 
   return (
     <div className="pb-4">
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 space-y-2">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-2 border-b border-gray-100 dark:border-slate-700 space-y-2">
         <AccountFilterToggle />
         <div className="flex items-center justify-center gap-6">
         <button
@@ -205,7 +205,7 @@ export function DashboardPage() {
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
-        <h1 className="text-base font-semibold text-gray-900 capitalize tracking-tight min-w-[140px] text-center">
+        <h1 className="text-base font-semibold text-gray-900 dark:text-gray-100 capitalize tracking-tight min-w-[140px] text-center">
           {monthName}
           {showYear ? ` ${year}` : ""}
         </h1>

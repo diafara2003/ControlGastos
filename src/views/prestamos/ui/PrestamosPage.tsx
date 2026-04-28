@@ -89,9 +89,9 @@ export function PrestamosPage() {
   return (
     <div className="pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-3 border-b border-gray-100">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 -mx-4 px-4 md:-mx-8 md:px-8 py-3 border-b border-gray-100 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Handshake className="h-5 w-5 text-emerald-600" />
             Préstamos
           </h1>
@@ -105,7 +105,7 @@ export function PrestamosPage() {
       <div className="space-y-4 mt-4">
         {/* Summary cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+          <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-800 dark:bg-blue-900/20">
             <div className="flex items-center gap-1.5 mb-1">
               <ArrowUpRight className="h-3.5 w-3.5 text-blue-600" />
               <span className="text-xs text-blue-600 font-medium">Por cobrar</span>
@@ -114,7 +114,7 @@ export function PrestamosPage() {
               {formatCOP(summary.porCobrar)}
             </p>
           </div>
-          <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3">
+          <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3 dark:border-violet-800 dark:bg-violet-900/20">
             <div className="flex items-center gap-1.5 mb-1">
               <ArrowDownLeft className="h-3.5 w-3.5 text-violet-600" />
               <span className="text-xs text-violet-600 font-medium">Por pagar</span>
@@ -134,14 +134,14 @@ export function PrestamosPage() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
                 filterType === t
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
               )}
             >
               {t === "all" ? "Todos" : t === "dado" ? "Yo presto" : "Me prestan"}
             </button>
           ))}
-          <div className="w-px bg-gray-200 mx-1" />
+          <div className="w-px bg-gray-200 dark:bg-slate-600 mx-1" />
           {(["all", "pending", "partial", "completed"] as const).map((s) => (
             <button
               key={s}
@@ -149,8 +149,8 @@ export function PrestamosPage() {
               className={cn(
                 "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors",
                 filterStatus === s
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
               )}
             >
               {s === "all" ? "Todos" : statusLabels[s]}
@@ -189,7 +189,7 @@ export function PrestamosPage() {
                 <button
                   key={p.id}
                   onClick={() => setEditPrestamo(p)}
-                  className="w-full text-left rounded-xl border border-gray-100 p-4 space-y-2 transition-colors active:bg-gray-50 hover:border-gray-200"
+                  className="w-full text-left rounded-xl border border-gray-100 dark:border-slate-700 p-4 space-y-2 transition-colors active:bg-gray-50 dark:active:bg-slate-700 hover:border-gray-200 dark:hover:border-slate-600"
                 >
                   <div className="flex items-start justify-between">
                     <div className="min-w-0">
@@ -204,7 +204,7 @@ export function PrestamosPage() {
                             <ArrowDownLeft className="h-3.5 w-3.5 text-violet-600" />
                           )}
                         </span>
-                        <p className="text-sm font-semibold text-gray-800 truncate">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 truncate">
                           {p.contact_name}
                         </p>
                       </div>
@@ -216,7 +216,7 @@ export function PrestamosPage() {
                       </p>
                     </div>
                     <div className="text-right shrink-0 ml-3">
-                      <p className="text-sm font-bold text-gray-900 tabular-nums">
+                      <p className="text-sm font-bold text-gray-900 dark:text-gray-100 tabular-nums">
                         {formatCOP(p.amount)}
                       </p>
                       <Badge variant={statusVariants[p.status]} className="mt-1">
@@ -227,7 +227,7 @@ export function PrestamosPage() {
 
                   {/* Progress bar */}
                   <div className="space-y-1">
-                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all duration-500",

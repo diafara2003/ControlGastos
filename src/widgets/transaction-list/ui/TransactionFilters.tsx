@@ -33,7 +33,7 @@ function Chip({
         "flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200",
         active
           ? "bg-emerald-600 text-white shadow-sm"
-          : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95"
+          : "bg-gray-100 text-gray-600 hover:bg-gray-200 active:scale-95 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600"
       )}
     >
       {children}
@@ -82,7 +82,7 @@ export function TransactionFilters({
         {/* Divider */}
         {cards && cards.length > 0 && (
           <>
-            <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+            <div className="h-4 w-px bg-gray-200 dark:bg-slate-600 flex-shrink-0" />
             {cards.map((card) => (
               <Chip
                 key={card}
@@ -96,14 +96,14 @@ export function TransactionFilters({
         )}
 
         {/* Categories toggle */}
-        <div className="h-4 w-px bg-gray-200 flex-shrink-0" />
+        <div className="h-4 w-px bg-gray-200 dark:bg-slate-600 flex-shrink-0" />
         <button
           onClick={() => setShowCategories(!showCategories)}
           className={cn(
             "flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-all",
             showCategories || selectedCategory
               ? "bg-emerald-50 text-emerald-700"
-              : "bg-gray-100 text-gray-500"
+              : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400"
           )}
         >
           <SlidersHorizontal className="h-3 w-3" />
@@ -132,7 +132,7 @@ export function TransactionFilters({
               value={catSearch}
               onChange={(e) => setCatSearch(e.target.value)}
               placeholder="Buscar categoria..."
-              className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+              className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-xs text-gray-700 placeholder:text-gray-400 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-400 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-200 dark:placeholder:text-gray-500"
             />
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto no-scrollbar">
@@ -151,7 +151,7 @@ export function TransactionFilters({
                       "flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium transition-all border",
                       isActive
                         ? "text-white border-current"
-                        : "border-gray-100 text-gray-700 active:scale-95"
+                        : "border-gray-100 text-gray-700 active:scale-95 dark:border-slate-600 dark:text-gray-300"
                     )}
                     style={isActive ? { backgroundColor: cat.color, borderColor: cat.color } : undefined}
                   >

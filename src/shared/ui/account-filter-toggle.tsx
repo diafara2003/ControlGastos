@@ -16,8 +16,8 @@ export function AccountFilterToggle() {
         onClick={() => setSelectedAccount("all")}
         className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
           selectedAccount === "all"
-            ? "bg-gray-900 text-white"
-            : "bg-gray-100 text-gray-500"
+            ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+            : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400"
         }`}
       >
         Todas
@@ -33,7 +33,7 @@ export function AccountFilterToggle() {
             className={`shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 ${
               isActive
                 ? "text-white"
-                : "bg-gray-100 text-gray-500"
+                : "bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-gray-400"
             }`}
             style={isActive ? { backgroundColor: brand.color, color: brand.textColor } : undefined}
           >

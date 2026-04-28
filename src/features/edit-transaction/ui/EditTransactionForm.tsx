@@ -156,7 +156,7 @@ export function EditTransactionForm({
 
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Comercio
             </label>
             <Input
@@ -167,7 +167,7 @@ export function EditTransactionForm({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-sm font-medium text-gray-700">Monto</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monto</label>
               <Input
                 type="text"
                 inputMode="numeric"
@@ -176,7 +176,7 @@ export function EditTransactionForm({
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-700">Tipo</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Tipo</label>
               <Select
                 value={type}
                 onChange={(e) =>
@@ -190,7 +190,7 @@ export function EditTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Fecha</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fecha</label>
             <Input
               type="date"
               value={transactionDate}
@@ -199,7 +199,7 @@ export function EditTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Categoria
             </label>
 
@@ -253,7 +253,7 @@ export function EditTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Notas</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notas</label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

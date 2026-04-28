@@ -50,7 +50,7 @@ export function CategoriesPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold text-gray-900">Categorías</h1>
+      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Categorías</h1>
 
       {/* Budgets section */}
       <div className="flex items-center justify-between">

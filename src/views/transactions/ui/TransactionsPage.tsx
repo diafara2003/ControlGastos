@@ -151,9 +151,9 @@ export function TransactionsPage() {
   return (
     <div>
       {/* Sticky header with search and filters */}
-      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 pb-3 space-y-3 md:top-0 -mx-4 px-4 md:-mx-8 md:px-8 pt-1 border-b border-gray-100">
+      <div className="sticky top-0 z-20 bg-white dark:bg-slate-900 pb-3 space-y-3 md:top-0 -mx-4 px-4 md:-mx-8 md:px-8 pt-1 border-b border-gray-100 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Movimientos</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Movimientos</h1>
           <Button size="sm" onClick={() => setShowAddForm(true)}>
             <Plus className="h-3.5 w-3.5" />
             Agregar
@@ -169,7 +169,7 @@ export function TransactionsPage() {
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <span className="text-sm font-semibold text-gray-700 capitalize min-w-[120px] text-center">
+            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 capitalize min-w-[120px] text-center">
               {monthName}{showYear ? ` ${year}` : ""}
             </span>
             <button

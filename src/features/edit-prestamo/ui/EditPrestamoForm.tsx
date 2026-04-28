@@ -175,7 +175,7 @@ export function EditPrestamoForm({
 
           {/* Edit fields */}
           <div>
-            <label className="text-sm font-medium text-gray-700">Contacto</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Contacto</label>
             <Input
               value={contactName}
               onChange={(e) => setContactName(e.target.value)}
@@ -183,7 +183,7 @@ export function EditPrestamoForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Monto (COP)</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Monto (COP)</label>
             <Input
               type="text"
               inputMode="numeric"
@@ -193,7 +193,7 @@ export function EditPrestamoForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Fecha esperada de pago
             </label>
             <Input
@@ -204,7 +204,7 @@ export function EditPrestamoForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Notas</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Notas</label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

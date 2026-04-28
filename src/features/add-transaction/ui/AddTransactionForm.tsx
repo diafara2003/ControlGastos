@@ -114,7 +114,7 @@ export function AddTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Monto (COP)
             </label>
             <Input
@@ -127,7 +127,7 @@ export function AddTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Comercio / Descripción
             </label>
             <Input
@@ -138,7 +138,7 @@ export function AddTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Categoría
             </label>
             <Select
@@ -155,7 +155,7 @@ export function AddTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Fecha</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Fecha</label>
             <Input
               type="date"
               value={date}
@@ -164,7 +164,7 @@ export function AddTransactionForm({
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Notas (opcional)
             </label>
             <Textarea

@@ -86,7 +86,7 @@ export function DialogContent({
     >
       <div
         className={cn(
-          "relative w-full bg-white shadow-xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0",
+          "relative w-full bg-white dark:bg-slate-900 shadow-xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0",
           "h-full sm:h-auto sm:max-h-[90vh] overflow-y-auto overflow-x-hidden",
           "sm:max-w-lg sm:rounded-2xl p-6 pb-24 sm:pb-6",
           className
@@ -94,9 +94,9 @@ export function DialogContent({
       >
         <button
           onClick={() => setOpen(false)}
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200"
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-slate-700 dark:hover:bg-slate-600"
         >
-          <X className="h-4 w-4 text-gray-600" />
+          <X className="h-4 w-4 text-gray-600 dark:text-gray-400" />
         </button>
         {children}
       </div>
@@ -122,7 +122,7 @@ export function DialogTitle({
   className?: string;
 }) {
   return (
-    <h2 className={cn("text-lg font-semibold text-gray-900", className)}>
+    <h2 className={cn("text-lg font-semibold text-gray-900 dark:text-gray-100", className)}>
       {children}
     </h2>
   );
