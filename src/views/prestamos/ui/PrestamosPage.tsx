@@ -11,6 +11,7 @@ import { formatShortDate } from "@/src/shared/lib/date";
 import { Badge } from "@/src/shared/ui/badge";
 import { Button } from "@/src/shared/ui/button";
 import { cn } from "@/src/shared/lib/cn";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 
 const statusLabels: Record<PrestamoStatus, string> = {
   pending: "Pendiente",
@@ -170,14 +171,12 @@ export function PrestamosPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-            <Handshake className="h-12 w-12 text-gray-300" />
-            <p className="text-sm text-gray-400">
-              {prestamos.length === 0
-                ? "No tienes préstamos registrados"
-                : "No hay préstamos con estos filtros"}
-            </p>
-          </div>
+          <EmptyState
+            icon={Handshake}
+            message={prestamos.length === 0
+              ? "No tienes préstamos registrados"
+              : "No hay préstamos con estos filtros"}
+          />
         ) : (
           <div className="space-y-3">
             {filtered.map((p) => {

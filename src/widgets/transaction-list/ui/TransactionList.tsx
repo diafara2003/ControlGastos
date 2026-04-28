@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/shared/u
 import { Button } from "@/src/shared/ui/button";
 
 import { formatCOP } from "@/src/shared/lib/currency";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 import { useCycleConfig } from "@/src/shared/context/cycle-config";
 
 /** Get YYYY-MM-DD in Colombia timezone */
@@ -133,9 +134,7 @@ export function TransactionList({
 
   if (transactions.length === 0) {
     return (
-      <div className="py-12 text-center">
-        <p className="text-gray-500">No hay transacciones para mostrar</p>
-      </div>
+      <EmptyState message="No hay transacciones para mostrar" />
     );
   }
 

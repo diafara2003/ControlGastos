@@ -15,6 +15,7 @@ import { useTheme } from "@/src/app/providers/ThemeProvider";
 import { Switch } from "@/src/shared/ui/switch";
 
 import { PushNotificationToggle } from "@/src/features/push-notifications";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
   LogOut,
   RefreshCw,
@@ -332,10 +333,10 @@ export function SettingsPage() {
           ) : (
             <>
               {emailAccounts.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">
-                  No hay cuentas conectadas. Conecta tu correo para empezar a
-                  leer tus notificaciones bancarias.
-                </p>
+                <EmptyState
+                  message="No hay cuentas conectadas"
+                  description="Conecta tu correo para empezar a leer tus notificaciones bancarias."
+                />
               ) : (
                 <div className="space-y-2">
                   {emailAccounts.map((acc) => (

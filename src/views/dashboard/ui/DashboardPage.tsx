@@ -13,6 +13,7 @@ import { AccountFilterToggle } from "@/src/shared/ui/account-filter-toggle";
 import { useAccountFilter, filterByAccount } from "@/src/shared/context/account-filter";
 import { WithdrawalAlert } from "@/src/features/withdrawal-details/ui/WithdrawalAlert";
 import { ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 
 const HISTORY_MONTHS = 3;
 const ALERT_THRESHOLD = 1.15; // 15% over historical average
@@ -278,14 +279,10 @@ export function DashboardPage() {
           </div>
         </div>
       ) : !hasData ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-2 text-center px-6">
-          <p className="text-sm text-gray-500">
-            No hay movimientos este mes todavía
-          </p>
-          <p className="text-xs text-gray-400">
-            Sincroniza tu correo para empezar a ver tus finanzas
-          </p>
-        </div>
+        <EmptyState
+          message="No hay movimientos este mes todavía"
+          description="Sincroniza tu correo para empezar a ver tus finanzas"
+        />
       ) : (
         <div className="space-y-4 stagger-children md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
           {/* MonthPulse spans full width on desktop */}

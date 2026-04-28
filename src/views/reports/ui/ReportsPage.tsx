@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { EmptyState } from "@/src/shared/ui/empty-state";
 import {
   ChevronLeft,
   ChevronRight,
@@ -358,12 +359,7 @@ export function ReportsPage() {
           </div>
         </div>
       ) : transactions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3 text-center">
-          <Receipt className="h-12 w-12 text-gray-300" />
-          <p className="text-sm text-gray-400">
-            No hay transacciones en este mes.
-          </p>
-        </div>
+        <EmptyState icon={Receipt} message="No hay transacciones en este mes." />
       ) : (
         <div className="space-y-4 md:grid md:grid-cols-2 md:gap-5 md:space-y-0">
           {/* ============================================================
