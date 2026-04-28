@@ -36,6 +36,7 @@ export function EditPrestamoForm({
   onUpdated,
 }: EditPrestamoFormProps) {
   const [contactName, setContactName] = useState(prestamo.contact_name);
+  const [amount, setAmount] = useState(String(prestamo.amount));
   const [expectedDate, setExpectedDate] = useState(
     prestamo.expected_return_date
       ? new Date(prestamo.expected_return_date).toISOString().split("T")[0]
@@ -44,7 +45,6 @@ export function EditPrestamoForm({
   const [notes, setNotes] = useState(prestamo.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Payment form
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -53,15 +53,17 @@ export function EditPrestamoForm({
   const [addingPayment, setAddingPayment] = useState(false);
 
   const payments = prestamo.payments ?? [];
+  const currentAmount = parseInt(amount, 10) || prestamo.amount;
   const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
-  const remaining = prestamo.amount - totalPaid;
-  const progressPct = prestamo.amount > 0 ? (totalPaid / prestamo.amount) * 100 : 0;
+  const remaining = currentAmount - totalPaid;
+  const progressPct = currentAmount > 0 ? (totalPaid / currentAmount) * 100 : 0;
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await updatePrestamo(prestamo.id, {
         contact_name: contactName.trim(),
+        amount: parseInt(amount, 10) || prestamo.amount,
         expected_return_date: expectedDate
           ? new Date(expectedDate + "T12:00:00").toISOString()
           : null,
@@ -121,6 +123,7 @@ export function EditPrestamoForm({
   };
 
   const handleDelete = async () => {
+    if (!window.confirm("¿Eliminar este préstamo? Esta acción no se puede deshacer.")) return;
     setDeleting(true);
     try {
       await deletePrestamo(prestamo.id);
@@ -148,7 +151,7 @@ export function EditPrestamoForm({
             <div className="flex justify-between text-sm">
               <span className="text-gray-500">Progreso</span>
               <span className="font-medium text-gray-800">
-                {formatCOP(totalPaid)} / {formatCOP(prestamo.amount)}
+                {formatCOP(totalPaid)} / {formatCOP(currentAmount)}
               </span>
             </div>
             <div className="h-2.5 rounded-full bg-gray-200 overflow-hidden">
@@ -180,6 +183,16 @@ export function EditPrestamoForm({
           </div>
 
           <div>
+            <label className="text-sm font-medium text-gray-700">Monto (COP)</label>
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={formatCOPInput(amount)}
+              onChange={(e) => setAmount(rawDigits(e.target.value))}
+            />
+          </div>
+
+          <div>
             <label className="text-sm font-medium text-gray-700">
               Fecha esperada de pago
             </label>
@@ -199,23 +212,48 @@ export function EditPrestamoForm({
             />
           </div>
 
-          <Button className="w-full" onClick={handleSave} disabled={saving || !contactName.trim()}>
-            {saving ? <Spinner className="h-4 w-4" /> : "Guardar cambios"}
-          </Button>
+          {/* Save + Delete row */}
+          <div className="flex gap-2">
+            <Button
+              className="flex-1"
+              onClick={handleSave}
+              disabled={saving || !contactName.trim()}
+            >
+              {saving ? <Spinner className="h-4 w-4" /> : "Guardar"}
+            </Button>
+            <Button
+              variant="outline"
+              className="border-red-200 text-red-500 hover:bg-red-50"
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? <Spinner className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+            </Button>
+          </div>
+
+          {/* Mark completed */}
+          {prestamo.status !== "completed" && (
+            <Button
+              variant="outline"
+              className="w-full text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+              onClick={handleMarkCompleted}
+              disabled={saving}
+            >
+              Marcar como pagado completo
+            </Button>
+          )}
 
           {/* Add payment section */}
           <div className="border-t border-gray-100 pt-4">
             <h3 className="text-sm font-semibold text-gray-800 mb-3">Agregar abono</h3>
             <div className="space-y-3">
-              <div>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Monto del abono"
-                  value={formatCOPInput(paymentAmount)}
-                  onChange={(e) => setPaymentAmount(rawDigits(e.target.value))}
-                />
-              </div>
+              <Input
+                type="text"
+                inputMode="numeric"
+                placeholder="Monto del abono"
+                value={formatCOPInput(paymentAmount)}
+                onChange={(e) => setPaymentAmount(rawDigits(e.target.value))}
+              />
               <Input
                 type="date"
                 value={paymentDate}
@@ -271,48 +309,6 @@ export function EditPrestamoForm({
               </div>
             </div>
           )}
-
-          {/* Actions */}
-          <div className="border-t border-gray-100 pt-4 space-y-2">
-            {prestamo.status !== "completed" && (
-              <Button
-                variant="outline"
-                className="w-full text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                onClick={handleMarkCompleted}
-                disabled={saving}
-              >
-                Marcar como pagado completo
-              </Button>
-            )}
-
-            {showDeleteConfirm ? (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowDeleteConfirm(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={handleDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? <Spinner className="h-4 w-4" /> : "Confirmar eliminar"}
-                </Button>
-              </div>
-            ) : (
-              <Button
-                variant="outline"
-                className="w-full text-red-500 border-red-200 hover:bg-red-50"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                Eliminar préstamo
-              </Button>
-            )}
-          </div>
         </div>
       </DialogContent>
     </Dialog>
