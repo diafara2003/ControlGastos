@@ -289,7 +289,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
           });
 
           if (insertError) {
-            console.error(`Insert error: ${insertError.message}`);
+            logEntry.errors.push(`Insert error: ${insertError.message}`);
             continue;
           }
 
