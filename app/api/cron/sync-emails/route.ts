@@ -9,7 +9,7 @@ import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { sendPushToUser } from "@/src/shared/lib/push-sender";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { getBankBrand } from "@/src/shared/config/bank-brands";
-import { periodStart, periodEnd, isCurrentPeriod, daysInPeriod, daysElapsedInPeriod, getPeriodKey, previousPeriod } from "@/src/shared/lib/date";
+import { periodStart, periodEnd, daysInPeriod, daysElapsedInPeriod } from "@/src/shared/lib/date";
 
 export const maxDuration = 60; // Vercel function timeout
 
@@ -163,18 +163,28 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
         continue;
       }
 
-      // 2. Deduplicate — skip emails already processed
+      // 2. Deduplicate — skip emails already processed or previously deleted
       const messageIds = emails.map((e) => e.messageId);
-      const { data: existing } = await supabase
-        .from("transactions")
-        .select("email_message_id")
-        .in("email_message_id", messageIds);
+      const [{ data: existing }, { data: deleted }] = await Promise.all([
+        supabase
+          .from("transactions")
+          .select("email_message_id")
+          .in("email_message_id", messageIds),
+        supabase
+          .from("deleted_email_ids")
+          .select("email_message_id")
+          .eq("user_id", account.user_id)
+          .in("email_message_id", messageIds),
+      ]);
 
       const existingIds = new Set(
         existing?.map((e) => e.email_message_id) ?? []
       );
+      const deletedMsgIds = new Set(
+        deleted?.map((e) => e.email_message_id) ?? []
+      );
       const newEmails = emails.filter(
-        (e) => !existingIds.has(e.messageId)
+        (e) => !existingIds.has(e.messageId) && !deletedMsgIds.has(e.messageId)
       );
 
       if (newEmails.length === 0) {
@@ -204,6 +214,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
 
       // 5. Load user cycle config + Save parsed transactions
       const cycleConfig = await getUserCycleConfig(account.user_id);
+
       for (const result of parseResults) {
         if (!result.parsed) continue;
 
