@@ -73,12 +73,8 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
     accountId: string;
     email: string;
     processed: number;
-    skippedDupes: number;
-    newEmails: number;
-    aiParsed: number;
     created: number;
     errors: string[];
-    debugEmails?: { subject: string; from: string; snippetLen: number; bodyLen: number; snippet: string }[];
   }[] = [];
 
   // Fetch active email accounts
@@ -118,12 +114,8 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       accountId: account.id,
       email: account.email,
       processed: 0,
-      skippedDupes: 0,
-      newEmails: 0,
-      aiParsed: 0,
       created: 0,
       errors: [] as string[],
-      debugEmails: [] as { subject: string; from: string; snippetLen: number; bodyLen: number; snippet: string }[],
     };
 
     // Create sync log
@@ -194,9 +186,6 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       const newEmailsList = emails.filter(
         (e) => !existingIds.has(e.messageId) && !deletedMsgIds.has(e.messageId)
       );
-      logEntry.skippedDupes = emails.length - newEmailsList.length;
-      logEntry.newEmails = newEmailsList.length;
-
       if (newEmailsList.length === 0) {
         console.log(`All ${emails.length} emails already processed, skipping`);
         await updateSyncLog(supabase, syncLog?.id, "success", logEntry.processed, 0);
@@ -204,18 +193,9 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
         continue;
       }
 
-      logEntry.debugEmails = newEmailsList.map((e) => ({
-        subject: e.subject,
-        from: e.from,
-        snippetLen: (e.snippet ?? "").length,
-        bodyLen: e.bodyText.trim().length,
-        snippet: (e.snippet ?? "").slice(0, 150),
-      }));
-
       // 3. Parse + classify emails with AI (single call per email)
       console.log(`Parsing ${newEmailsList.length} new emails with AI (${existingIds.size} already processed)...`);
       const parseResults = await parseEmails(newEmailsList, account.user_id);
-      logEntry.aiParsed = parseResults.filter((r) => r.parsed !== null).length;
 
       for (const r of parseResults) {
         console.log(`AI result: parsed=${!!r.parsed} ${r.parsed ? `type=${r.parsed.type} amount=${r.parsed.amount} merchant=${r.parsed.merchant} category=${r.categoryName}` : 'no_transaction'}`);
@@ -280,7 +260,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
             description: result.parsed.description,
             category_id: categoryId,
             transaction_date: adjustPayrollDate(result.parsed, result.parsed.transactionDate, cycleConfig.day, cycleConfig.hour).toISOString(),
-            classification_method: result.method === "pattern" ? "pattern" : "ai",
+            classification_method: "ai",
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
             card_last_four: result.parsed.cardLastFour,
