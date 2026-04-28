@@ -1,5 +1,6 @@
 import type { FetchedEmail } from "./gmail";
 import type { ParsedTransaction } from "./patterns";
+import { findPattern } from "./patterns";
 import { parseWithAI } from "./ai-parser";
 
 export interface ParseResult {
@@ -24,6 +25,21 @@ export async function parseEmails(
     const batchResults = await Promise.all(
       batch.map(async (email) => {
         try {
+          // 1. Try pattern-based parsing first (fast, no AI needed)
+          const pattern = findPattern(email.from);
+          if (pattern) {
+            const patternResult = pattern.parse(email.bodyText, email.subject, email.date);
+            if (patternResult) {
+              return {
+                email,
+                parsed: patternResult,
+                categoryName: null,
+                method: "pattern",
+              } as ParseResult;
+            }
+          }
+
+          // 2. Fall back to AI
           const parsed = await parseWithAI(email, userId);
           if (parsed) {
             const { categoryName, classificationMethod, excludeFromTotals, ...transaction } = parsed;
