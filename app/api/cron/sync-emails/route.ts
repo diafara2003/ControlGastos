@@ -123,6 +123,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       aiParsed: 0,
       created: 0,
       errors: [] as string[],
+      debugEmails: [] as { subject: string; from: string; snippetLen: number; bodyLen: number; snippet: string }[],
     };
 
     // Create sync log
