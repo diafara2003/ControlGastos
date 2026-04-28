@@ -23,20 +23,24 @@ function parseAmount(text: string): number | null {
 }
 
 function parseDateFromBody(text: string, fallbackDate: string): Date {
-  // Bancolombia date formats: "08/04/2026" or "08/Abr/2026" or "2026-04-08"
-  const datePatterns = [
-    /(\d{2})\/(\d{2})\/(\d{4})/,
-    /(\d{4})-(\d{2})-(\d{2})/,
-  ];
+  // Try to extract full datetime: "28/04/2026 13:45:15"
+  const datetimeMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (datetimeMatch) {
+    const [, dd, mm, yyyy, hh, min, ss = "00"] = datetimeMatch;
+    // Use local time string to avoid UTC midnight offset issues
+    return new Date(`${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`);
+  }
 
-  for (const pattern of datePatterns) {
-    const match = text.match(pattern);
-    if (match) {
-      if (match[1].length === 4) {
-        return new Date(`${match[1]}-${match[2]}-${match[3]}`);
-      }
-      return new Date(`${match[3]}-${match[2]}-${match[1]}`);
-    }
+  // Date only: "28/04/2026" — use noon local time to avoid UTC day-shift
+  const dateMatch = text.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+  if (dateMatch) {
+    return new Date(`${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}T12:00:00`);
+  }
+
+  // ISO format: "2026-04-28"
+  const isoMatch = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (isoMatch) {
+    return new Date(`${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}T12:00:00`);
   }
 
   return new Date(fallbackDate);
