@@ -82,6 +82,25 @@ export function TransactionsPage() {
     return () => window.removeEventListener("transactions-updated", handler);
   }, [loadData]);
 
+  const handleDeleteMonth = useCallback(async (year: number, month: number) => {
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("transactions")
+      .delete()
+      .gte("transaction_date", startDate)
+      .lte("transaction_date", endDate);
+
+    if (error) {
+      console.error("Error deleting month transactions:", error);
+      return;
+    }
+    loadData();
+  }, [loadData]);
+
   const filteredTransactions = useMemo(() => {
     let filtered = filterByAccount(transactions, selectedAccount, bankAccounts);
     if (withdrawalFilter) {
@@ -183,6 +202,7 @@ export function TransactionsPage() {
         onTransactionClick={(t) => {
           setEditingTx(t);
         }}
+        onDeleteMonth={handleDeleteMonth}
       />
 
       {editingTx && (

@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Trash2, AlertTriangle } from "lucide-react";
 import { TransactionCard } from "@/src/entities/transaction";
 import type { Transaction } from "@/src/entities/transaction";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/shared/ui/dialog";
+import { Button } from "@/src/shared/ui/button";
 
 import { formatCOP } from "@/src/shared/lib/currency";
 
@@ -16,6 +19,7 @@ interface TransactionListProps {
   transactions: Transaction[];
   loading?: boolean;
   onTransactionClick?: (transaction: Transaction) => void;
+  onDeleteMonth?: (year: number, month: number) => void;
 }
 
 function getDaySummary(txns: Transaction[]) {
@@ -58,12 +62,25 @@ function getWeekendSummary(
   return { expenses, income };
 }
 
+/** Get "YYYY-MM" key from a date string */
+function toMonthKey(dateStr: string): string {
+  return dateStr.slice(0, 7); // "YYYY-MM"
+}
+
+function getMonthLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  const label = d.toLocaleDateString("es-CO", { month: "long", year: "numeric" });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export function TransactionList({
   transactions,
   loading,
   onTransactionClick,
+  onDeleteMonth,
 }: TransactionListProps) {
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
+  const [deleteMonth, setDeleteMonth] = useState<{ year: number; month: number; label: string } | null>(null);
 
   if (loading) {
     return (
@@ -124,15 +141,36 @@ export function TransactionList({
 
   return (
     <div className="space-y-4">
-      {Object.entries(grouped).map(([date, txns]) => {
+      {Object.entries(grouped).map(([date, txns], index, entries) => {
         const { expenses, income } = getDaySummary(txns);
         const d = new Date(date + "T12:00:00");
         const dayOfWeek = d.getDay();
         const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
         const weekendSummary = getWeekendSummary(grouped, date);
 
+        const currentMonth = toMonthKey(date);
+        const prevMonth = index > 0 ? toMonthKey(entries[index - 1][0]) : null;
+        const showMonthHeader = currentMonth !== prevMonth;
+
         return (
           <div key={date}>
+            {showMonthHeader && (
+              <div className="flex items-center justify-between bg-gray-100 dark:bg-slate-800 rounded-lg px-4 py-2 mb-2">
+                <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
+                  {getMonthLabel(date)}
+                </span>
+                {onDeleteMonth && (
+                  <button
+                    type="button"
+                    aria-label={`Eliminar transacciones de ${getMonthLabel(date)}`}
+                    onClick={() => setDeleteMonth({ year: d.getFullYear(), month: d.getMonth() + 1, label: getMonthLabel(date) })}
+                    className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            )}
             {/* Weekend summary — before Sunday (first day in desc order) */}
             {weekendSummary && (() => {
               const wkBalance = weekendSummary.income - weekendSummary.expenses;
@@ -215,6 +253,40 @@ export function TransactionList({
           </div>
         );
       })}
+
+      <Dialog open={!!deleteMonth} onOpenChange={(open) => { if (!open) setDeleteMonth(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="h-5 w-5" />
+              Eliminar mes completo
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            ¿Eliminar <span className="font-semibold">todas</span> las transacciones de{" "}
+            <span className="font-semibold">{deleteMonth?.label}</span>?
+          </p>
+          <p className="text-xs text-gray-400 mt-1">Esta acción no se puede deshacer.</p>
+          <div className="flex gap-3 mt-5">
+            <Button variant="outline" className="flex-1" onClick={() => setDeleteMonth(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              className="flex-1"
+              onClick={() => {
+                if (deleteMonth && onDeleteMonth) {
+                  onDeleteMonth(deleteMonth.year, deleteMonth.month);
+                }
+                setDeleteMonth(null);
+              }}
+            >
+              <Trash2 className="h-4 w-4" />
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
