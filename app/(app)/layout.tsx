@@ -2,9 +2,9 @@ import { BottomNav } from "@/src/widgets/bottom-nav";
 import { AppHeader } from "@/src/widgets/app-header";
 import { Sidebar } from "@/src/widgets/sidebar";
 import { AutoSync } from "@/src/features/sync-emails/ui/AutoSync";
+import { PullToRefresh } from "@/src/shared/ui/pull-to-refresh";
 import { InstallPrompt } from "@/src/features/pwa-install";
 import { NotificationPrompt } from "@/src/features/push-notifications";
-import { CreditCardCheck } from "@/src/features/credit-card-setup";
 import { BankAccountSetup } from "@/src/features/bank-account-setup";
 import { AccountFilterProvider } from "@/src/shared/context/account-filter";
 import { CycleConfigProvider } from "@/src/shared/context/cycle-config";
@@ -15,6 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <AccountFilterProvider>
     <div className="min-h-dvh">
       <AutoSync />
+      <PullToRefresh />
       <Sidebar />
       <AppHeader />
 
@@ -27,7 +28,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <BottomNav />
       <InstallPrompt />
       <NotificationPrompt />
-      <CreditCardCheck />
       <BankAccountSetup />
     </div>
     </AccountFilterProvider>
