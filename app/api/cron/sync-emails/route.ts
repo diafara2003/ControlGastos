@@ -9,6 +9,7 @@ import { parseEmails } from "@/src/features/sync-emails/lib/parser";
 import { sendPushToUser } from "@/src/shared/lib/push-sender";
 import { formatCOP } from "@/src/shared/lib/currency";
 import { getBankBrand } from "@/src/shared/config/bank-brands";
+import { periodStart, periodEnd, isCurrentPeriod, daysInPeriod, daysElapsedInPeriod, getPeriodKey, previousPeriod } from "@/src/shared/lib/date";
 
 export const maxDuration = 60; // Vercel function timeout
 
@@ -38,22 +39,29 @@ export async function POST(request: Request) {
 }
 
 /**
- * Payroll payments received in the last 5 days of a month belong to next month's budget.
- * Shifts their transaction_date to the 1st of the following month.
+ * Payroll payments received in the last 5 days of a period belong to next period's budget.
+ * Shifts their transaction_date to the start of the next period.
  */
-function adjustPayrollDate(parsed: { type: string; description: string | null; merchant: string }, txDate: Date): Date {
+function adjustPayrollDate(
+  parsed: { type: string; description: string | null; merchant: string },
+  txDate: Date,
+  cycleDay: number = 1,
+  cycleHour: number = 0
+): Date {
   const PAYROLL_KEYWORDS = ["nómina", "nomina", "pago de nomina", "pago de nómina"];
   const text = `${parsed.description ?? ""} ${parsed.merchant}`.toLowerCase();
   const isPayroll = parsed.type === "income" && PAYROLL_KEYWORDS.some((kw) => text.includes(kw));
 
   if (!isPayroll) return txDate;
 
-  const daysInMonth = new Date(txDate.getFullYear(), txDate.getMonth() + 1, 0).getDate();
-  const daysLeft = daysInMonth - txDate.getDate();
+  const totalDays = daysInPeriod(txDate, cycleDay, cycleHour);
+  const elapsed = daysElapsedInPeriod(txDate, cycleDay, cycleHour);
+  const daysLeft = totalDays - elapsed;
 
   if (daysLeft < 5) {
-    // Midnight Colombia (UTC-5) on the 1st of next month
-    return new Date(Date.UTC(txDate.getFullYear(), txDate.getMonth() + 1, 1, 5));
+    // Move to start of next period
+    const pEnd = periodEnd(txDate, cycleDay, cycleHour);
+    return new Date(pEnd.getTime() + 1000);
   }
 
   return txDate;
@@ -85,6 +93,20 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
       { error: fetchError?.message ?? "No accounts found" },
       { status: 500 }
     );
+  }
+
+  // Cache cycle config per user
+  const cycleConfigCache = new Map<string, { day: number; hour: number }>();
+  async function getUserCycleConfig(userId: string) {
+    if (cycleConfigCache.has(userId)) return cycleConfigCache.get(userId)!;
+    const { data } = await supabase
+      .from("profiles")
+      .select("cycle_start_day, cycle_start_hour")
+      .eq("id", userId)
+      .single();
+    const config = { day: data?.cycle_start_day ?? 1, hour: data?.cycle_start_hour ?? 0 };
+    cycleConfigCache.set(userId, config);
+    return config;
   }
 
   for (const account of accounts) {
@@ -180,7 +202,8 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
         categories?.map((c) => [c.name, c.id]) ?? []
       );
 
-      // 5. Save parsed transactions
+      // 5. Load user cycle config + Save parsed transactions
+      const cycleConfig = await getUserCycleConfig(account.user_id);
       for (const result of parseResults) {
         if (!result.parsed) continue;
 
@@ -226,7 +249,7 @@ export async function syncAllAccounts(filterUserId?: string, maxEmails: number =
             merchant: result.parsed.merchant,
             description: result.parsed.description,
             category_id: categoryId,
-            transaction_date: adjustPayrollDate(result.parsed, result.parsed.transactionDate).toISOString(),
+            transaction_date: adjustPayrollDate(result.parsed, result.parsed.transactionDate, cycleConfig.day, cycleConfig.hour).toISOString(),
             classification_method: result.method === "pattern" ? "pattern" : "ai",
             email_message_id: result.email.messageId,
             raw_email_snippet: result.email.snippet?.slice(0, 500),
@@ -398,39 +421,62 @@ async function updateSyncLog(
 }
 
 /**
- * At the start of each month, close the previous month's savings_history
+ * At the start of each period, close the previous period's savings_history
  * by computing actual_savings (income - expenses) and whether the goal was met.
+ * Uses each user's cycle config to determine period boundaries.
  */
 async function closePreviousMonthSavings(
   supabase: ReturnType<typeof createServiceClient>
 ) {
   try {
     const now = new Date();
-    // Only run in the first 5 days of a month
-    if (now.getDate() > 5) return;
 
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const monthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`;
+    // Find savings_history records that haven't been closed yet
+    // Look at records from the last 2 months to cover any cycle config
+    const twoMonthsAgo = new Date(now);
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+    const minKey = `${twoMonthsAgo.getFullYear()}-${String(twoMonthsAgo.getMonth() + 1).padStart(2, "0")}`;
 
-    // Find savings_history records for prev month that haven't been closed
     const { data: openRecords } = await supabase
       .from("savings_history")
-      .select("id, user_id, goal")
-      .eq("month", monthKey)
+      .select("id, user_id, goal, month")
+      .gte("month", minKey)
       .is("actual_savings", null);
 
     if (!openRecords || openRecords.length === 0) return;
 
-    const prevStart = new Date(prevMonth.getFullYear(), prevMonth.getMonth(), 1);
-    const prevEnd = new Date(prevMonth.getFullYear(), prevMonth.getMonth() + 1, 0, 23, 59, 59);
-
+    let closed = 0;
     for (const record of openRecords) {
+      // Load user's cycle config
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("cycle_start_day, cycle_start_hour")
+        .eq("id", record.user_id)
+        .single();
+
+      const cycleDay = profile?.cycle_start_day ?? 1;
+      const cycleHour = profile?.cycle_start_hour ?? 0;
+
+      // The record.month is the period key (YYYY-MM) — find a date in that period
+      const [y, m] = record.month.split("-").map(Number);
+      // Use mid-month as reference date for that period
+      const refDate = new Date(y, m - 1, 15);
+      const pStart = periodStart(refDate, cycleDay, cycleHour);
+      const pEnd = periodEnd(refDate, cycleDay, cycleHour);
+
+      // Only close if the period has already ended
+      if (now <= pEnd) continue;
+
+      // Only close within first 5 days after period ends
+      const daysSinceEnd = (now.getTime() - pEnd.getTime()) / (1000 * 60 * 60 * 24);
+      if (daysSinceEnd > 5) continue;
+
       const { data: txns } = await supabase
         .from("transactions")
         .select("type, amount")
         .eq("user_id", record.user_id)
-        .gte("transaction_date", prevStart.toISOString())
-        .lte("transaction_date", prevEnd.toISOString());
+        .gte("transaction_date", pStart.toISOString())
+        .lte("transaction_date", pEnd.toISOString());
 
       if (!txns) continue;
 
@@ -450,9 +496,10 @@ async function closePreviousMonthSavings(
           updated_at: new Date().toISOString(),
         })
         .eq("id", record.id);
+      closed++;
     }
 
-    console.log(`Closed ${openRecords.length} savings records for ${monthKey}`);
+    if (closed > 0) console.log(`Closed ${closed} savings records`);
   } catch (err) {
     console.error("Error closing savings history:", err);
   }
