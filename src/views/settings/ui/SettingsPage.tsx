@@ -24,19 +24,17 @@ import {
   CheckCircle,
   AlertCircle,
   Moon,
-  CreditCard,
   Landmark,
   ChevronRight,
   CalendarClock,
 } from "lucide-react";
-import { CreditCardSetupModal } from "@/src/features/credit-card-setup";
 import { getBankBrand } from "@/src/shared/config/bank-brands";
 import { Select } from "@/src/shared/ui/select";
 import { Input } from "@/src/shared/ui/input";
 import { useCycleConfig } from "@/src/shared/context/cycle-config";
 
 function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   return (
@@ -167,10 +165,6 @@ export function SettingsPage() {
     type: "success" | "error";
     message: string;
   } | null>(null);
-  const [userCards, setUserCards] = useState<
-    { bank_name: string; product_type: string }[]
-  >([]);
-  const [showCardModal, setShowCardModal] = useState(false);
   const [bankAccountsOpen, setBankAccountsOpen] = useState(false);
   const [bankAccounts, setBankAccounts] = useState<
     {
@@ -207,19 +201,14 @@ export function SettingsPage() {
       });
     }
 
-    const [{ data }, { data: cards }, { data: banks }] = await Promise.all([
+    const [{ data }, { data: banks }] = await Promise.all([
       supabase
         .from("email_accounts")
         .select("*")
         .order("created_at", { ascending: false }),
-      supabase
-        .from("user_credit_cards")
-        .select("bank_name, product_type")
-        .order("bank_name"),
       supabase.from("bank_accounts").select("*").order("created_at"),
     ]);
     if (data) setEmailAccounts(data as EmailAccount[]);
-    if (cards) setUserCards(cards);
     if (banks) setBankAccounts(banks);
     setLoadingAccounts(false);
   }, []);
@@ -263,7 +252,13 @@ export function SettingsPage() {
 
   const handleDisconnect = async (accountId: string) => {
     const supabase = createClient();
-    await supabase.from("email_accounts").delete().eq("id", accountId);
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) return;
+    await supabase
+      .from("email_accounts")
+      .delete()
+      .eq("id", accountId)
+      .eq("user_id", authUser.id);
     setEmailAccounts((prev) => prev.filter((a) => a.id !== accountId));
   };
 
@@ -411,17 +406,6 @@ export function SettingsPage() {
           });
         }}
       />
-
-      {/* Credit cards section removed - replaced by bank_accounts */}
-      {false && (
-        <CreditCardSetupModal
-          open={showCardModal}
-          onComplete={() => {
-            setShowCardModal(false);
-            loadAccounts();
-          }}
-        />
-      )}
 
       {/* Bank accounts - accordion */}
       {bankAccounts.length > 0 && (

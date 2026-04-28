@@ -1,28 +1,7 @@
 import { createServiceClient } from "@/src/shared/api/supabase/service";
+import { encrypt, decrypt } from "@/src/shared/lib/crypto";
+import { FINANCIAL_SENDERS } from "@/src/shared/config/constants";
 import type { FetchedEmail } from "./gmail";
-
-// Sender domains that send transaction notifications (not marketing)
-const FINANCIAL_SENDERS = [
-  "alertasynotificaciones@bancolombia.com.co",
-  "alertasynotificaciones@an.notificacionesbancolombia.com",
-  "notificaciones@nequi.com",
-  "alertas@davivienda.com", "notificaciones@davivienda.com",
-  "alertas@bancocajasocial.com", "notificador@bancocajasocial.com",
-  "notificaciones@avvillas.com.co",
-  "alertas@bbva.com.co", "notificaciones@scotiabank.com.co",
-  "notificaciones@colpatria.com", "alertas@bancodebogota.com",
-  "notificaciones@bancodeoccidente.com", "alertas@bancopopular.com",
-  "notificaciones@bancoagrario.com", "notificaciones@itau.co",
-  "notificaciones@gnbsudameris.com", "notificaciones@pichincha.com",
-  "notificaciones@bancofalabella.com", "notificaciones@finandina.com",
-  "notificaciones@serfinanza.com", "notificaciones@bancoomeva.com",
-  "notificaciones@bancamia.com",
-  "soporte@addi.com", "noreply@addi.com",
-  "noreply@lulo.bank", "notificaciones@rappipay.co",
-  "notificaciones@daviplata.com", "notificaciones@movii.co",
-  "noreply@dale.co", "noreply@uala.com.co",
-  "notificaciones@nu.com.co", "noreply@soynu.com.co",
-];
 
 // Keywords that indicate an actual transaction in the email body/subject
 const TRANSACTION_KEYWORDS = [
@@ -65,8 +44,8 @@ async function refreshMicrosoftToken(
       return null;
     }
     const supabase = createServiceClient();
-    const updates: Record<string, string> = { provider_token_encrypted: data.access_token };
-    if (data.refresh_token) updates.provider_refresh_token_encrypted = data.refresh_token;
+    const updates: Record<string, string> = { provider_token_encrypted: encrypt(data.access_token) };
+    if (data.refresh_token) updates.provider_refresh_token_encrypted = encrypt(data.refresh_token);
     await supabase.from("email_accounts").update(updates).eq("id", accountId);
     console.log("Microsoft token refreshed");
     return data.access_token;
@@ -98,14 +77,16 @@ async function getValidToken(
 }
 
 export async function fetchOutlookGraphEmails(
-  accessToken: string,
+  accessTokenEncrypted: string,
   lastSyncAt: string | null,
   maxResults: number = 50,
-  refreshToken?: string | null,
+  refreshTokenEncrypted?: string | null,
   accountId?: string
 ): Promise<FetchedEmail[]> {
+  const accessToken = decrypt(accessTokenEncrypted);
+  const refreshToken = refreshTokenEncrypted ? decrypt(refreshTokenEncrypted) : null;
   const validToken = accountId
-    ? await getValidToken(accessToken, refreshToken ?? null, accountId)
+    ? await getValidToken(accessToken, refreshToken, accountId)
     : accessToken;
   if (!validToken) return [];
 

@@ -25,33 +25,16 @@ export function AutoSync() {
     const userEmail = session.user.email;
     if (!userEmail) return;
 
-    if (provider === "azure") {
-      const updates: Record<string, string> = {};
-      if (session.provider_token) updates.provider_token_encrypted = session.provider_token;
-      if (session.provider_refresh_token) updates.provider_refresh_token_encrypted = session.provider_refresh_token;
-
-      if (Object.keys(updates).length > 0) {
-        const { data: existing } = await supabase
-          .from("email_accounts")
-          .select("id")
-          .eq("email", userEmail)
-          .limit(1);
-
-        if (existing && existing.length > 0) {
-          await supabase
-            .from("email_accounts")
-            .update(updates)
-            .eq("email", userEmail);
-        } else if (!registeredRef.current) {
-          await supabase.from("email_accounts").insert({
-            user_id: session.user.id,
-            provider: "outlook",
-            email: userEmail,
-            ...updates,
-            is_active: true,
-          });
-        }
-      }
+    if (provider === "azure" && session.provider_token) {
+      await fetch("/api/emails/store-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userEmail,
+          providerToken: session.provider_token,
+          providerRefreshToken: session.provider_refresh_token,
+        }),
+      });
       registeredRef.current = true;
     }
   }, []);

@@ -18,6 +18,7 @@ import type { Transaction } from "@/src/entities/transaction";
 import type { Category } from "@/src/entities/category";
 import { LucideIcon } from "@/src/shared/ui/lucide-icon";
 import { BookOpen, ChevronRight, Search, X, Banknote } from "lucide-react";
+import { ConfirmDialog } from "@/src/shared/ui/confirm-dialog";
 
 interface EditTransactionFormProps {
   transaction: Transaction;
@@ -54,6 +55,7 @@ export function EditTransactionForm({
   const [catSearch, setCatSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Rule section
   const [showRule, setShowRule] = useState(false);
@@ -126,11 +128,7 @@ export function EditTransactionForm({
   };
 
   const handleDelete = async () => {
-    const confirmed = window.confirm(
-      "¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer."
-    );
-    if (!confirmed) return;
-
+    setShowDeleteConfirm(false);
     setDeleting(true);
     const supabase = createClient();
 
@@ -394,13 +392,22 @@ export function EditTransactionForm({
           <Button
             variant="outline"
             className="w-full border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             disabled={deleting || saving}
           >
             {deleting ? <Spinner className="h-4 w-4" /> : "Eliminar"}
           </Button>
         </div>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Eliminar transaccion"
+        description="¿Estas seguro de que quieres eliminar esta transaccion? Esta accion no se puede deshacer."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </Dialog>
   );
 }

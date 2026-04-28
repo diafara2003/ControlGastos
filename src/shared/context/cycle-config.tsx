@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import { createClient } from "@/src/shared/api/supabase/client";
 import {
   periodStart as _periodStart,
@@ -79,7 +79,7 @@ export function CycleConfigProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("cycle-config-updated", handler);
   }, [loadConfig]);
 
-  const value: CycleConfig = {
+  const value: CycleConfig = useMemo(() => ({
     cycleDay,
     cycleHour,
     loaded,
@@ -93,7 +93,7 @@ export function CycleConfigProvider({ children }: { children: ReactNode }) {
     nextPeriod: (d) => _nextPeriod(d, cycleDay, cycleHour),
     isCurrentPeriod: (d) => _isCurrentPeriod(d, cycleDay, cycleHour),
     reload: loadConfig,
-  };
+  }), [cycleDay, cycleHour, loaded, loadConfig]);
 
   return (
     <CycleConfigContext.Provider value={value}>

@@ -25,22 +25,22 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // getSession() refreshes the token if expired, getUser() does not
+  // getUser() verifies the JWT with the server (secure)
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const isAuthPage = request.nextUrl.pathname === "/login";
   const isPublicRoute =
     isAuthPage || request.nextUrl.pathname.startsWith("/auth/");
 
-  if (!session && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (session && isAuthPage) {
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

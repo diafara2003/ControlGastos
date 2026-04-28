@@ -160,11 +160,11 @@ export function ReportsPage() {
 
   // ---- Derived data ----
   const income = useMemo(
-    () => filteredTxns.filter((t) => t.type === "income"),
+    () => filteredTxns.filter((t) => t.type === "income" && !t.exclude_from_totals),
     [filteredTxns]
   );
   const expenses = useMemo(
-    () => filteredTxns.filter((t) => t.type === "expense"),
+    () => filteredTxns.filter((t) => t.type === "expense" && !t.exclude_from_totals),
     [filteredTxns]
   );
 
@@ -184,14 +184,14 @@ export function ReportsPage() {
   const prevIncome = useMemo(
     () =>
       filteredPrevTxns
-        .filter((t) => t.type === "income")
+        .filter((t) => t.type === "income" && !t.exclude_from_totals)
         .reduce((s, t) => s + t.amount, 0),
     [filteredPrevTxns]
   );
   const prevExpenses = useMemo(
     () =>
       filteredPrevTxns
-        .filter((t) => t.type === "expense")
+        .filter((t) => t.type === "expense" && !t.exclude_from_totals)
         .reduce((s, t) => s + t.amount, 0),
     [filteredPrevTxns]
   );

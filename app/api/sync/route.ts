@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const maxEmails = parseInt(searchParams.get("maxEmails") ?? "20", 10);
+  const maxEmails = Math.min(parseInt(searchParams.get("maxEmails") ?? "20", 10), 500);
 
   return syncAllAccounts(user.id, maxEmails);
 }

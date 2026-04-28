@@ -86,10 +86,10 @@ export function DashboardPage() {
       const filtered = filterByAccount(txns, selectedAccount, accounts);
       const filteredHistory = filterByAccount(history, selectedAccount, accounts);
       const income = filtered
-        .filter((t) => t.type === "income")
+        .filter((t) => t.type === "income" && !t.exclude_from_totals)
         .reduce((sum, t) => sum + t.amount, 0);
       const expenses = filtered
-        .filter((t) => t.type === "expense")
+        .filter((t) => t.type === "expense" && !t.exclude_from_totals)
         .reduce((sum, t) => sum + t.amount, 0);
       setTotals({ income, expenses });
 
@@ -107,6 +107,7 @@ export function DashboardPage() {
         .filter(
           (t) =>
             t.type === "expense" &&
+            !t.exclude_from_totals &&
             new Date(t.transaction_date) >= prevPeriodStart &&
             new Date(t.transaction_date) <= prevPeriodSameDay
         )
@@ -114,7 +115,7 @@ export function DashboardPage() {
       setLastMonthSameDay(lastMonthExpenses);
 
       // Category alerts
-      const historicalExpenses = filteredHistory.filter((t) => t.type === "expense");
+      const historicalExpenses = filteredHistory.filter((t) => t.type === "expense" && !t.exclude_from_totals);
       setHasHistory(historicalExpenses.length > 0);
 
       // Historical avg per category across HISTORY_MONTHS
@@ -139,7 +140,7 @@ export function DashboardPage() {
 
       const currentByCategory = new Map<string, number>();
       for (const t of txns) {
-        if (t.type !== "expense" || !t.category_id) continue;
+        if (t.type !== "expense" || !t.category_id || t.exclude_from_totals) continue;
         currentByCategory.set(
           t.category_id,
           (currentByCategory.get(t.category_id) ?? 0) + t.amount

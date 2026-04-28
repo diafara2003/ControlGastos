@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Trash2 } from "lucide-react";
+import { ConfirmDialog } from "@/src/shared/ui/confirm-dialog";
 import { Button } from "@/src/shared/ui/button";
 import { Input } from "@/src/shared/ui/input";
 import { Textarea } from "@/src/shared/ui/textarea";
@@ -45,6 +46,7 @@ export function EditPrestamoForm({
   const [notes, setNotes] = useState(prestamo.notes ?? "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Payment form
   const [paymentAmount, setPaymentAmount] = useState("");
@@ -123,7 +125,7 @@ export function EditPrestamoForm({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("¿Eliminar este préstamo? Esta acción no se puede deshacer.")) return;
+    setShowDeleteConfirm(false);
     setDeleting(true);
     try {
       await deletePrestamo(prestamo.id);
@@ -224,7 +226,7 @@ export function EditPrestamoForm({
             <Button
               variant="outline"
               className="border-red-200 text-red-500 hover:bg-red-50"
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
             >
               {deleting ? <Spinner className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
@@ -311,6 +313,15 @@ export function EditPrestamoForm({
           )}
         </div>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Eliminar prestamo"
+        description="¿Eliminar este prestamo? Esta accion no se puede deshacer."
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </Dialog>
   );
 }

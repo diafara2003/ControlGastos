@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import {
   TransactionList,
   TransactionFilters,
@@ -217,9 +218,9 @@ export function TransactionsPage() {
                 Retiros pendientes de detallar
               </span>
             </div>
-            <a href="/transactions" className="text-[10px] text-amber-500 underline">
+            <Link href="/transactions" className="text-[10px] text-amber-500 underline">
               Ver todos
-            </a>
+            </Link>
           </div>
         )}
 
