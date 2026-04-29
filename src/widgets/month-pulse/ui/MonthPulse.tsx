@@ -33,13 +33,11 @@ export function MonthPulse({
   const dayElapsed = periodElapsed ?? (isCurrentMonth ? now.getDate() : daysInMonth);
   const daysLeft = Math.max(daysInMonth - dayElapsed, 0);
 
-  const avgDaily = dayElapsed > 0 ? totalExpenses / dayElapsed : 0;
-  const projected = isCurrentMonth ? avgDaily * daysInMonth : totalExpenses;
-  // If savings goal is set, the spending limit is income minus the goal
+  const balance = totalIncome - totalExpenses;
   const spendingLimit = savingsGoal != null && totalIncome > 0
     ? totalIncome - savingsGoal
     : totalIncome;
-  const withinBudget = spendingLimit > 0 ? projected <= spendingLimit : true;
+  const withinBudget = balance >= 0;
 
   const diff = totalExpenses - lastMonthExpensesSameDay;
   const diffPct =
@@ -109,25 +107,21 @@ export function MonthPulse({
         </div>
       )}
 
-      {isCurrentMonth && totalExpenses > 0 && (
+      {totalIncome > 0 && (
         <div className={`mt-4 rounded-xl ${projectionBg} px-4 py-3`}>
           <p className="text-[11px] font-medium text-gray-600 dark:text-gray-400">
-            Si sigues a este ritmo, cerrarás el mes en
+            Balance del periodo
           </p>
           <p
             className={`text-xl font-bold mt-0.5 tabular-nums ${projectionTone}`}
           >
-            {formatCOP(Math.round(projected))}
+            {formatCOP(Math.round(balance))}
           </p>
-          {totalIncome > 0 && (
+          {savingsGoal != null && (
             <p className="text-[11px] text-gray-500 mt-1">
-              {withinBudget
-                ? savingsGoal != null
-                  ? `Ahorrarás ${formatCOP(Math.round(totalIncome - projected))} (meta: ${formatCOP(savingsGoal)})`
-                  : `Te sobrarán ${formatCOP(Math.round(totalIncome - projected))}`
-                : savingsGoal != null
-                  ? `Te excederás ${formatCOP(Math.round(projected - spendingLimit))} de tu presupuesto (sin contar ahorro)`
-                  : `Te excederás ${formatCOP(Math.round(projected - totalIncome))} de tus ingresos`}
+              {balance >= savingsGoal
+                ? `Vas bien — superas tu meta de ahorro de ${formatCOP(savingsGoal)}`
+                : `Faltan ${formatCOP(Math.round(savingsGoal - balance))} para tu meta de ahorro`}
             </p>
           )}
         </div>
