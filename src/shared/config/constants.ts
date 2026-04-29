@@ -6,6 +6,7 @@ export const FINANCIAL_SENDERS = [
   // Bancos (dominios para atrapar cualquier remitente)
   "bancolombia.com.co",
   "notificacionesbancolombia.com",
+  "an.notificacionesbancolombia.com",
   "nequi.com",
   "nequi.com.co",
   "davivienda.com",

@@ -89,15 +89,13 @@ export async function fetchImapEmails(
         since,
       };
 
-      let count = 0;
+      const allEmails: FetchedEmail[] = [];
 
       for await (const message of client.fetch(
         { ...searchCriteria } as never,
         { source: true, uid: true },
         { uid: true }
       )) {
-        if (count >= maxResults) break;
-
         try {
           if (!message.source) continue;
           const parsed = await simpleParser(message.source);
@@ -117,7 +115,7 @@ export async function fetchImapEmails(
               ? parsed.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
               : "");
 
-          emails.push({
+          allEmails.push({
             messageId: parsed.messageId ?? `imap-${message.uid}`,
             from: fromAddress,
             subject: parsed.subject ?? "",
@@ -125,12 +123,13 @@ export async function fetchImapEmails(
             bodyText,
             snippet: bodyText.slice(0, 200),
           });
-
-          count++;
         } catch {
           // Skip unparseable messages
         }
       }
+
+      // Take the newest emails (IMAP returns oldest first)
+      emails.push(...allEmails.slice(-maxResults));
     } finally {
       lock.release();
     }
