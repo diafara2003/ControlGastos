@@ -34,6 +34,8 @@ export const nuPattern: BankPattern = {
           description: "Pago tarjeta Nu",
           transactionDate: new Date(date),
           cardLastFour: null,
+          categoryName: "Pago tarjeta crédito",
+          excludeFromTotals: true,
         };
       }
     }

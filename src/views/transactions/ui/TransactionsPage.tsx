@@ -92,9 +92,10 @@ export function TransactionsPage() {
   }, [selectedCategory, selectedType, selectedCard, searchQuery, selectedDate, cycle]);
 
   useEffect(() => {
+    if (!cycle.loaded) return;
     const timer = setTimeout(loadData, searchQuery ? 300 : 0);
     return () => clearTimeout(timer);
-  }, [loadData, searchQuery]);
+  }, [loadData, searchQuery, cycle.loaded]);
 
   // Auto-refresh when new transactions are synced
   useEffect(() => {

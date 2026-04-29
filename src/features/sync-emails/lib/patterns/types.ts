@@ -5,6 +5,8 @@ export interface ParsedTransaction {
   description: string | null;
   transactionDate: Date;
   cardLastFour: string | null;
+  categoryName?: string;
+  excludeFromTotals?: boolean;
 }
 
 export interface BankPattern {

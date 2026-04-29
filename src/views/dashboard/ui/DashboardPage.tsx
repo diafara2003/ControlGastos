@@ -177,8 +177,8 @@ export function DashboardPage() {
   }, [selectedDate, isCurrent, selectedAccount, accounts, cycle]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (cycle.loaded) load();
+  }, [load, cycle.loaded]);
 
   useEffect(() => {
     const handler = () => load();

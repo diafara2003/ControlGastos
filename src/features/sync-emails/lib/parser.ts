@@ -33,7 +33,7 @@ export async function parseEmails(
               return {
                 email,
                 parsed: patternResult,
-                categoryName: null,
+                categoryName: patternResult.categoryName ?? null,
                 method: "pattern",
               } as ParseResult;
             }

@@ -84,13 +84,17 @@ export const bancolombiaPattern: BankPattern = {
     if (pagasteMatch) {
       const amount = parseAmount(`$${pagasteMatch[1]}`);
       if (amount) {
+        const merchant = pagasteMatch[2].trim();
+        const CREDIT_CARD_MERCHANTS = ["nu compania de financiamiento", "nu colombia", "bancolombia tarjeta", "tarjeta de credito"];
+        const isCreditCardPayment = CREDIT_CARD_MERCHANTS.some((m) => merchant.toLowerCase().includes(m));
         return {
           type: "expense",
           amount,
-          merchant: pagasteMatch[2].trim(),
-          description: "Pago",
+          merchant,
+          description: isCreditCardPayment ? "Pago tarjeta crédito" : "Pago",
           transactionDate: parseDateFromBody(bodyText, date),
           cardLastFour,
+          ...(isCreditCardPayment && { categoryName: "Pago tarjeta crédito", excludeFromTotals: true }),
         };
       }
     }
