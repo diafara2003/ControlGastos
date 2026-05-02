@@ -6,6 +6,8 @@ function parseAmount(text: string): number | null {
   let raw = match[1];
   if (raw.includes(",") && raw.indexOf(",") > raw.lastIndexOf(".")) {
     raw = raw.replace(/\./g, "").replace(",", ".");
+  } else if (!raw.includes(",") && /^\d{1,3}(\.\d{3})+$/.test(raw)) {
+    raw = raw.replace(/\./g, "");
   } else {
     raw = raw.replace(/,/g, "");
   }

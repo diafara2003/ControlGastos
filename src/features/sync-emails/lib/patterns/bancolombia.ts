@@ -2,18 +2,19 @@ import type { BankPattern, ParsedTransaction } from "./types";
 import { extractCardLastFour } from "./types";
 
 function parseAmount(text: string): number | null {
-  // Bancolombia formats: $150,000.00 or $150.000,00 or $150000
+  // Bancolombia formats: $150,000.00 or $150.000,00 or $150.000 or $150000
   const match = text.match(/\$\s*([\d.,]+)/);
   if (!match) return null;
 
   let raw = match[1];
-  // Handle Colombian format: 1.234.567,89 → remove dots, replace comma with nothing
-  // Or US format: 1,234,567.89
   if (raw.includes(",") && raw.indexOf(",") > raw.lastIndexOf(".")) {
-    // Format: 150.000,00 (European/Colombian)
+    // Format: 150.000,00 (Colombian/European) — dots are thousands, comma is decimal
     raw = raw.replace(/\./g, "").replace(",", ".");
+  } else if (!raw.includes(",") && /^\d{1,3}(\.\d{3})+$/.test(raw)) {
+    // Format: 300.000 or 1.500.000 (Colombian thousands with no decimal part)
+    raw = raw.replace(/\./g, "");
   } else {
-    // Format: 150,000.00 (US)
+    // Format: 150,000.00 (US) or plain number
     raw = raw.replace(/,/g, "");
   }
 
